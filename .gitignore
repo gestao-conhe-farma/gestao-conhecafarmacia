@@ -31,3 +31,8 @@ supabase/.temp
 
 # credenciais locais
 credenciais.txt
+
+# artefactos de sessão local (cookies, logs)
+c*.txt
+s*.log
+_design/jar.txt

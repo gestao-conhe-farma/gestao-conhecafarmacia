@@ -11,6 +11,7 @@ export default function SecaoEntrevista({
   ehSuper,
   meuConvite,
   equipa,
+  confirmadas = 0,
   num = '01',
 }) {
   const router = useRouter()

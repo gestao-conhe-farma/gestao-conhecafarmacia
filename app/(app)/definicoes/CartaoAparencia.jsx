@@ -1,6 +1,6 @@
 'use client'
 
-import { Monitor } from 'lucide-react'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
 
 export default function CartaoAparencia() {
