@@ -22,16 +22,55 @@ export default function FormLogin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      const data = await res.json()
+
+      // Lê o corpo como texto primeiro: se a resposta não for JSON
+      // (ex.: HTML de um redirect/erro), o res.json() lançaria e
+      // perderíamos a informação toda.
+      const texto = await res.text()
+      let data = null
+      try {
+        data = texto ? JSON.parse(texto) : null
+      } catch {
+        // corpo não-JSON — logado abaixo
+      }
 
       if (!res.ok) {
-        setErro(data.erro || 'Não foi possível entrar. Verifica os dados.')
+        console.group(
+          `%c[login] falha ${res.status} ${res.statusText}`,
+          'color:#dc2626;font-weight:bold'
+        )
+        console.log('URL:', res.url)
+        console.log('Content-Type:', res.headers.get('content-type'))
+        console.log('Corpo:', data ?? texto?.slice(0, 500))
+        if (data && typeof data === 'object') {
+          const { erro, detalhe, ...resto } = data
+          if (detalhe) console.warn('Detalhe do servidor:', detalhe)
+          if (Object.keys(resto).length) console.log('Outros campos:', resto)
+        }
+        console.groupEnd()
+
+        setErro(
+          data?.erro ||
+            (data
+              ? 'Resposta inesperada do servidor. Abre a consola (F12) para detalhes.'
+              : `Resposta não-JSON do servidor (HTTP ${res.status}). Abre a consola (F12) para detalhes.`)
+        )
         return
       }
+
+      if (!data?.ok) {
+        console.warn('[login] resposta 200 sem {ok:true}:', data ?? texto)
+        setErro('Resposta inesperada do servidor. Abre a consola (F12) para detalhes.')
+        return
+      }
+
       router.replace('/')
       router.refresh()
-    } catch {
-      setErro('Erro de rede. Tenta novamente.')
+    } catch (errRede) {
+      // Falha real de rede / DNS / abort — quase nunca acontece depois do
+      // fix do redirect do proxy, mas fica logado na mesma.
+      console.error('[login] exceção no fetch:', errRede)
+      setErro(`Erro de rede: ${errRede?.message ?? 'desconhecido'}`)
     } finally {
       setACarregar(false)
     }
