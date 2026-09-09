@@ -13,6 +13,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import NavLateral from './NavLateral'
+import DrawerMobile from './DrawerMobile'
 import BotaoTema from './BotaoTema'
 import BotaoSair from './BotaoSair'
 
@@ -93,12 +94,13 @@ export default async function AppLayout({ children }) {
       {/* Conteúdo */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar mobile */}
-        <header className="lg:hidden sticky top-0 z-40 bg-brand-bg border-b border-brand-divider/60 px-4 h-16 flex items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2">
+        <header className="lg:hidden sticky top-0 z-40 bg-brand-bg border-b border-brand-divider/60 pl-2 pr-4 h-16 flex items-center gap-2">
+          <DrawerMobile items={items} pessoa={pessoa} />
+          <Link href="/" className="flex items-center flex-1 justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo/logo-principal-verde.svg" alt="Conheça Farmácia" className="h-8" />
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 w-18 justify-end">
             <BotaoTema />
             <BotaoSair />
           </div>
