@@ -1,9 +1,15 @@
 import Link from 'next/link'
 import { CalendarDays, CheckCircle2, Clock, ListTodo, Plus, UserCheck } from 'lucide-react'
 import { getUtilizadorAtual } from '@/lib/supabase/server'
-import { listarAtividades, listarSubtarefas, formatarData } from '@/lib/dados'
+import {
+  listarAtividades,
+  listarSubtarefas,
+  listarDatasFuturas,
+  formatarData,
+} from '@/lib/dados'
 import CartaoAtividade from './CartaoAtividade'
 import AbasTipo from './AbasTipo'
+import CalendarioPrazos from './CalendarioPrazos'
 
 export const metadata = { title: 'Início' }
 
@@ -12,12 +18,13 @@ export default async function PaginaInicio({ searchParams }) {
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 
-  const [atividades, minhasSubtarefas, aAprovar] = await Promise.all([
+  const [atividades, minhasSubtarefas, aAprovar, datasFuturas] = await Promise.all([
     listarAtividades({ tipo }),
     listarSubtarefas({}),
     pessoa.role === 'super_admin'
       ? listarSubtarefas({ status: 'pendente_aprovacao' })
       : Promise.resolve([]),
+    listarDatasFuturas(),
   ])
 
   const subtarefasVisiveis = minhasSubtarefas.filter((s) =>
@@ -26,6 +33,29 @@ export default async function PaginaInicio({ searchParams }) {
   const emAtraso = subtarefasVisiveis.filter(
     (s) => s.status !== 'concluida' && s.prazo && new Date(s.prazo) < new Date()
   )
+
+  // Eventos para o calendário de prazos: atividades e subtarefas com prazo.
+  // Subtarefas pendentes de aprovação não contam — ainda não são compromisso.
+  const eventosCalendario = [
+    ...datasFuturas.atividades.map((a) => ({
+      id: `a-${a.id}`,
+      titulo: a.titulo,
+      tipo: a.tipo,
+      prazo: a.prazo,
+      status: a.tipo === 'evento' && a.status_evento === 'concluida' ? 'concluida' : 'aberta',
+      href: `/atividades/${a.id}`,
+    })),
+    ...datasFuturas.subtarefas
+      .filter((s) => s.status !== 'pendente_aprovacao')
+      .map((s) => ({
+        id: `s-${s.id}`,
+        titulo: s.titulo,
+        tipo: 'subtarefa',
+        prazo: s.prazo,
+        status: s.status,
+        href: `/atividades/${s.atividade_id}`,
+      })),
+  ]
 
   const stats = [
     { label: 'Atividades', valor: atividades.filter((a) => a.tipo === 'atividade').length, icon: ListTodo },
@@ -189,6 +219,11 @@ export default async function PaginaInicio({ searchParams }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Calendário de prazos (secção 04) */}
+      <div className="mt-6">
+        <CalendarioPrazos eventos={eventosCalendario} largo />
       </div>
     </div>
   )
