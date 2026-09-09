@@ -1,4 +1,193 @@
-/* Skeleton shimmer */
+@import "tailwindcss";
+
+@theme {
+  /* === Marca Conheça Farmácia (igual ao site público) === */
+  --color-brand-primary: #00493a;
+  --color-brand-accent: #0a844f;
+  --color-brand-deep: #002a32;
+  --color-brand-bg: #ffffff;
+  --color-brand-bg-alt: #f9f9f9;
+  --color-brand-card: #ffffff;
+  --color-brand-divider: #dddddd;
+
+  /* Tipografia */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+
+  /* Elevação */
+  --shadow-soft: 0 4px 20px rgba(0, 42, 50, 0.05);
+  --shadow-md-soft: 0 10px 30px rgba(0, 42, 50, 0.08);
+}
+
+/* Dark Mode */
+html.dark {
+  --color-brand-bg: #0a0f0d;
+  --color-brand-bg-alt: #111816;
+  --color-brand-card: #151c19;
+  --color-brand-divider: #1f2927;
+  --color-brand-deep: #e5e7eb;
+  --color-brand-primary: #005c4a;
+  --color-brand-accent: #0d995f;
+}
+
+html.dark body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-deep);
+}
+
+@layer base {
+  * {
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  body {
+    @apply bg-brand-bg text-brand-deep antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .container-app {
+    @apply w-full max-w-[1200px] mx-auto px-6 md:px-10;
+  }
+
+  .card {
+    @apply bg-brand-card rounded-2xl shadow-soft border border-brand-divider/60;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold;
+    transition:
+      background-color 0.3s ease-in-out,
+      color 0.3s ease-in-out,
+      transform 0.3s ease-in-out,
+      box-shadow 0.3s ease-in-out,
+      opacity 0.3s ease-in-out;
+  }
+
+  .btn-primary {
+    @apply bg-brand-primary text-white hover:brightness-110 hover:scale-[1.02] active:scale-[0.98];
+  }
+  .btn-primary:disabled {
+    @apply bg-brand-primary/50 cursor-not-allowed hover:brightness-100 hover:scale-100;
+  }
+
+  .btn-accent {
+    @apply bg-brand-accent text-white hover:brightness-110 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply border-2 border-brand-primary text-brand-primary hover:bg-brand-primary/10 active:scale-[0.98];
+  }
+  html.dark .btn-secondary {
+    @apply border-brand-accent text-brand-accent;
+  }
+
+  .btn-danger {
+    @apply border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white active:scale-[0.98];
+  }
+  html.dark .btn-danger {
+    @apply border-red-400 text-red-400 hover:bg-red-400 hover:text-brand-bg;
+  }
+
+  .btn-small {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  /* Formulários */
+  .form-label {
+    @apply text-sm font-semibold text-brand-deep;
+  }
+
+  .form-input,
+  .form-textarea,
+  .form-select {
+    @apply w-full px-4 py-2.5 rounded-lg border border-brand-divider bg-white text-brand-deep
+      placeholder:text-brand-deep/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40
+      focus:border-brand-accent transition-all duration-200;
+  }
+  html.dark .form-input,
+  html.dark .form-textarea,
+  html.dark .form-select {
+    background-color: var(--color-brand-bg-alt);
+    border-color: var(--color-brand-divider);
+    color: var(--color-brand-deep);
+  }
+  html.dark .form-input::placeholder,
+  html.dark .form-textarea::placeholder {
+    color: var(--color-brand-deep);
+    opacity: 0.5;
+  }
+
+  .form-textarea {
+    @apply min-h-[90px] resize-y;
+  }
+
+  .form-select {
+    @apply appearance-none pr-10 cursor-pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23002a32' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25em 1.25em;
+  }
+  html.dark .form-select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e5e7eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  }
+
+  /* Badges de estado/tipo */
+  .badge {
+    @apply text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full inline-flex items-center gap-1;
+  }
+
+  .badge-tipo-atividade { @apply bg-[#0a844f]/10 text-[#0a844f]; }
+  .badge-tipo-evento { @apply bg-[#006171]/10 text-[#006171]; }
+  .badge-tipo-entrevista { @apply bg-[#ff6c23]/10 text-[#ff6c23]; }
+
+  .badge-status-pendente { @apply bg-amber-500/10 text-amber-600; }
+  .badge-status-aprovada { @apply bg-[#0a844f]/10 text-[#0a844f]; }
+  .badge-status-rejeitada { @apply bg-red-500/10 text-red-600; }
+  .badge-status-concluida { @apply bg-[#00493a]/10 text-[#00493a]; }
+  .badge-status-convidado { @apply bg-amber-500/10 text-amber-600; }
+  .badge-status-confirmado { @apply bg-[#0a844f]/10 text-[#0a844f]; }
+
+  html.dark .badge-status-concluida { @apply bg-[#0d995f]/15 text-[#0d995f]; }
+
+  .filter-btn {
+    @apply px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-300;
+  }
+  .filter-btn.active {
+    @apply bg-brand-primary border-brand-primary text-white shadow-md;
+  }
+  .filter-btn:not(.active) {
+    @apply border-brand-divider text-brand-deep hover:border-brand-accent hover:text-brand-accent;
+  }
+  html.dark .filter-btn:not(.active) {
+    @apply border-brand-divider text-brand-deep;
+  }
+
+  .empty-state {
+    @apply text-center py-16 text-brand-deep/50;
+  }
+}
+
+/* Scrollbar discreta */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 73, 58, 0.25);
+  border-radius: 999px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(13, 153, 95, 0.3);
+}
+
+/* Skeleton shimmer (loading states) */
 .skeleton {
   background: linear-gradient(
     90deg,
