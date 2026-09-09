@@ -15,10 +15,13 @@ import {
 import { formatarTamanho } from '@/lib/documentos'
 import { eliminarDocumento } from './actions'
 
-function iconeFicheiro(mime) {
-  if (mime?.startsWith('image/')) return FileImage
-  if (mime?.includes('spreadsheet') || mime?.includes('excel')) return FileSpreadsheet
-  return FileText
+function chipFicheiro(mime) {
+  if (mime?.startsWith('image/')) return { cls: 'file-img', label: 'IMG' }
+  if (mime?.includes('spreadsheet') || mime?.includes('excel') || mime?.includes('csv'))
+    return { cls: 'file-xls', label: 'XLS' }
+  if (mime?.includes('word') || mime?.includes('document') || mime?.includes('rtf'))
+    return { cls: 'file-doc', label: 'DOC' }
+  return { cls: 'file-pdf', label: 'PDF' }
 }
 
 export default function ListaDocumentos({ documentos, ehSuper }) {
@@ -38,53 +41,66 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
   }
 
   return (
-    <div className="card divide-y divide-brand-divider/60 overflow-hidden">
+    <ul className="border-t border-brand-divider">
       {documentos.map((doc) => {
-        const Icone = iconeFicheiro(doc.mime_type)
+        const chip = chipFicheiro(doc.mime_type)
         return (
-          <div key={doc.id} className="p-4 md:p-5 flex items-center gap-4 hover:bg-brand-primary/[0.03] transition-colors">
-            <span className="w-11 h-11 rounded-xl bg-brand-primary/10 text-brand-primary grid place-items-center shrink-0">
-              <Icone size={20} />
+          <li
+            key={doc.id}
+            className="border-b border-brand-divider py-4 px-1 -mx-1 flex items-center gap-4 hover:bg-brand-primary/[0.03] transition-colors"
+          >
+            {/* Monograma do formato */}
+            <span className={`file-chip ${chip.cls}`} aria-hidden="true">
+              {chip.label}
             </span>
 
+            {/* Título + código */}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold text-brand-deep truncate">{doc.titulo}</p>
+                <p className="font-semibold text-brand-deep text-[14.5px] min-w-0 truncate">
+                  {doc.titulo}
+                </p>
                 {doc.restrito && (
-                  <span className="badge bg-amber-500/10 text-amber-600" title="Visível apenas à coordenação">
+                  <span
+                    className="badge bg-amber-500/10 text-amber-600 shrink-0"
+                    title="Visível apenas à coordenação"
+                  >
                     <Lock size={10} /> Restrito
                   </span>
                 )}
-                {doc.codigo && <span className="badge badge-tipo-evento normal-case">{doc.codigo}</span>}
               </div>
-              <p className="text-xs text-brand-deep/50 mt-0.5 truncate">
-                {doc.categoria?.nome ?? 'Sem categoria'}
-                {' · '}
-                {formatarTamanho(doc.tamanho_bytes)}
-                {doc.criado_por?.nome && ` · adicionado por ${doc.criado_por.nome}`}
-                {doc.descricao && ` — ${doc.descricao}`}
+              <p className="text-xs font-mono tracking-wide text-brand-deep/45 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                {doc.codigo && <span>{doc.codigo}</span>}
+                <span className="font-sans">{doc.categoria?.nome ?? 'Sem categoria'}</span>
+                <span className="font-sans">{formatarTamanho(doc.tamanho_bytes)}</span>
+                {doc.criado_por?.nome && (
+                  <span className="font-sans hidden sm:inline">
+                    por {doc.criado_por.nome}
+                  </span>
+                )}
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            {/* Ações */}
+            <div className="flex items-center gap-1 shrink-0">
               {aEliminar === doc.id ? (
                 <Loader2 size={18} className="animate-spin text-brand-accent" />
               ) : (
                 <>
                   <a
                     href={`/documentos/${doc.id}/download`}
-                    className="btn btn-secondary btn-small"
+                    aria-label={`Descarregar ${doc.titulo}`}
                     title="Descarregar"
+                    className="w-9 h-9 grid place-items-center rounded-lg border border-transparent text-brand-deep/45 hover:text-brand-accent hover:border-brand-divider transition-colors"
                   >
-                    <Download size={14} />
-                    <span className="hidden sm:inline">Descarregar</span>
+                    <Download size={16} />
                   </a>
                   {ehSuper && (
                     <button
                       onClick={() => eliminar(doc.id, doc.titulo)}
-                      aria-label="Eliminar documento"
+                      aria-label={`Eliminar ${doc.titulo}`}
                       title="Eliminar"
-                      className="w-8 h-8 grid place-items-center rounded-lg text-red-500/70 hover:text-red-600 hover:bg-red-500/10 transition-colors"
+                      className="w-9 h-9 grid place-items-center rounded-lg border border-transparent text-red-500/60 hover:text-red-600 hover:border-red-500/30 transition-colors"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -92,9 +108,9 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
                 </>
               )}
             </div>
-          </div>
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }

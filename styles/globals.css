@@ -7,7 +7,8 @@
   --color-brand-deep: #14231d;
   --color-brand-bg: #f7f6f2;
   --color-brand-bg-alt: #efede7;
-  --color-brand-card: #ffffff;
+  /* Cartão em branco quente — nunca branco puro, para assentar no papel do fundo */
+  --color-brand-card: #fcfbf9;
   --color-brand-divider: #e3e1da;
 
   /* Assinatura da direção A: sidebar sempre escura + tinta forte */
@@ -249,4 +250,56 @@ html.dark body {
 }
 html.dark ::-webkit-scrollbar-thumb {
   background: rgba(16, 185, 129, 0.25);
+}
+
+/* === Direção A · padrões editoriais partilhados === */
+
+/* Painel lateral / bloco de formulário: papel alt, nunca cartão flutuante */
+.panel {
+  @apply bg-brand-bg-alt border border-brand-divider rounded-2xl;
+}
+
+/* Número de secção editorial (01, 02, …) */
+.sec-num {
+  @apply text-[11px] font-bold tracking-[0.12em] text-brand-deep/35 pt-1.5 tabular-nums;
+}
+
+/* Etiqueta de meta-informação em cabeçalhos de detalhe */
+.meta-label {
+  @apply block text-[10px] font-bold uppercase tracking-[0.14em] text-brand-accent mb-1;
+}
+
+/* Pílula de papel (Equipa / Perfil) */
+.role-pill {
+  @apply text-[10.5px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full inline-flex items-center;
+}
+.role-super {
+  @apply bg-brand-accent/10 text-brand-accent;
+}
+.role-membro {
+  @apply bg-brand-bg-alt text-brand-deep/55 border border-brand-divider;
+}
+
+/* Monograma de formato de ficheiro (Documentos) */
+.file-chip {
+  @apply w-11 h-11 rounded-xl grid place-items-center text-[9.5px] font-extrabold tracking-[0.04em] shrink-0;
+}
+.file-pdf { @apply bg-red-500/10 text-red-600; }
+.file-doc { @apply bg-blue-500/10 text-blue-600; }
+.file-xls { @apply bg-brand-accent/10 text-brand-accent; }
+.file-img { @apply bg-violet-500/10 text-violet-600; }
+
+/* Chips de seleção (responsáveis, convites) */
+.chip-btn {
+  @apply px-3 py-1.5 rounded-full text-sm border-2 transition-all duration-200;
+}
+.chip-btn-off { @apply border-brand-divider text-brand-deep/60 hover:border-brand-accent/50; }
+.chip-btn-on { @apply border-brand-accent bg-brand-accent/10 text-brand-accent font-semibold; }
+
+/* Cabeçalho de tabela editorial */
+.table-head {
+  @apply text-[10px] font-bold uppercase tracking-[0.14em] text-brand-deep/45 pb-2.5 border-b-2 border-ink-strong;
+}
+html.dark .table-head {
+  border-color: var(--color-brand-divider);
 }

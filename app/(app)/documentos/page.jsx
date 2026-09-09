@@ -24,46 +24,45 @@ export default async function PaginaDocumentos({ searchParams }) {
 
   return (
     <div className="container-app">
-      <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">
-            Biblioteca interna
-          </p>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-brand-deep mt-1">
-            Documentos
-          </h1>
-          <p className="text-brand-deep/60 mt-1">
-            Documentos oficiais do Conheça Farmácia — cartas, contratos, políticas e mais.
-          </p>
+      {/* Cabeçalho editorial com régua forte */}
+      <div className="page-head">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="kicker">Biblioteca interna</p>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-brand-deep mt-2 tracking-tight">
+              Documentos
+            </h1>
+            <p className="text-brand-deep/60 mt-2 max-w-xl leading-relaxed">
+              Documentos oficiais do Conheça Farmácia — cartas, contratos,
+              políticas e mais.
+            </p>
+          </div>
+          {ehSuper && (
+            <Link href="/documentos/novo" className="btn btn-primary shrink-0">
+              <Plus size={16} />
+              Adicionar documento
+            </Link>
+          )}
         </div>
-        {ehSuper && (
-          <Link href="/documentos/novo" className="btn btn-primary">
-            <Plus size={16} />
-            Adicionar documento
-          </Link>
-        )}
       </div>
 
       <DocumentosFiltros categorias={categorias} categoriaAtual={categoriaId} busca={busca} />
 
-      {ehSuper && (
-        <div className="mt-4">
-          <GestorCategorias categorias={categorias} />
-        </div>
-      )}
+      {ehSuper && <GestorCategorias categorias={categorias} />}
 
-      <div className="mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-bold text-brand-deep">
+      <div className="mt-8">
+        <div className="flex items-baseline justify-between gap-4 mb-3">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">
             {categoriaAtual ? categoriaAtual.nome : 'Todos os documentos'}
-            <span className="ml-2 text-sm font-sans font-medium text-brand-deep/45">
-              {documentos.length}
-            </span>
           </h2>
+          <p className="text-sm text-brand-deep/45 tabular-nums">
+            <strong className="text-brand-deep">{documentos.length}</strong>{' '}
+            {documentos.length === 1 ? 'ficheiro' : 'ficheiros'}
+          </p>
         </div>
 
         {documentos.length === 0 ? (
-          <div className="card empty-state">
+          <div className="empty-state">
             <FolderOpen size={36} className="mx-auto mb-3 text-brand-accent/50" />
             <p className="font-semibold text-brand-deep">Sem documentos</p>
             <p className="text-sm mt-1">

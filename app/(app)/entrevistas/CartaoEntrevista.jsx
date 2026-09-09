@@ -24,11 +24,11 @@ export default function CartaoEntrevista({ entrevista }) {
   const confirmado = entrevista.meu_status === 'confirmado'
 
   return (
-    <div className="card p-5 flex flex-wrap items-center gap-4">
+    <div className="py-5 border-b border-brand-divider flex flex-wrap items-center gap-4">
       <div className="min-w-0 flex-1">
         <Link
           href={`/atividades/${entrevista.id}`}
-          className="font-display text-lg font-bold text-brand-deep hover:text-brand-primary transition-colors"
+          className="text-[16px] font-bold text-brand-deep hover:text-brand-primary transition-colors"
         >
           {entrevista.titulo}
         </Link>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { Monitor } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
 
 export default function CartaoAparencia() {
@@ -8,17 +8,10 @@ export default function CartaoAparencia() {
   const escuro = tema === 'escuro'
 
   return (
-    <div className="card p-6 md:p-8">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary grid place-items-center">
-          {escuro ? <Moon size={20} /> : <Sun size={20} />}
-        </span>
-        <h2 className="font-display text-xl font-bold text-brand-deep">Aparência</h2>
-      </div>
-
+    <div>
       <button
         onClick={alternarTema}
-        className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-brand-divider/60 hover:border-brand-accent/50 transition-colors"
+        className="w-full flex items-center justify-between p-4 rounded-xl border border-brand-divider bg-brand-card hover:border-brand-accent/50 transition-colors max-w-md"
       >
         <span className="flex items-center gap-3">
           {escuro ? <Moon size={18} className="text-brand-accent" /> : <Sun size={18} className="text-amber-500" />}

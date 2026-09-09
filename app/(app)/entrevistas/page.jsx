@@ -24,16 +24,20 @@ export default async function PaginaEntrevistas() {
 
   return (
     <div className="container-app max-w-3xl">
-      <h1 className="font-display text-3xl font-bold text-brand-deep mb-2">
-        As minhas entrevistas
-      </h1>
-      <p className="text-brand-deep/60 mb-8">
-        Convites de entrevista da coordenação — confirma a tua presença nas que
-        vais participar.
-      </p>
+      {/* Cabeçalho editorial com régua forte */}
+      <div className="page-head">
+        <p className="kicker">Agenda</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-brand-deep mt-2 tracking-tight">
+          As minhas entrevistas
+        </h1>
+        <p className="text-brand-deep/60 mt-2 leading-relaxed max-w-xl">
+          Convites de entrevista da coordenação — confirma a tua presença nas
+          que vais participar.
+        </p>
+      </div>
 
       {entrevistas.length === 0 ? (
-        <div className="card empty-state">
+        <div className="empty-state">
           <CalendarCheck size={36} className="mx-auto mb-3 text-brand-accent/50" />
           <p className="font-semibold text-brand-deep">Sem convites de momento</p>
           <p className="text-sm mt-1">
@@ -41,7 +45,7 @@ export default async function PaginaEntrevistas() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div>
           {entrevistas.map((e) => (
             <CartaoEntrevista key={e.id} entrevista={e} />
           ))}

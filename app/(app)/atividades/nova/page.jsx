@@ -18,17 +18,19 @@ export default async function PaginaNovaAtividade() {
 
   return (
     <div className="container-app max-w-3xl">
-      <h1 className="font-display text-3xl font-bold text-brand-deep mb-2">
-        Nova atividade
-      </h1>
-      <p className="text-brand-deep/60 mb-8">
-        Atividades de topo criadas pela coordenação nascem já aprovadas e ficam
-        visíveis para toda a equipa.
-      </p>
-
-      <div className="card p-6 md:p-8">
-        <FormNovaAtividade equipa={equipa} pessoaAtualId={pessoa.id} eventos={eventos} />
+      {/* Cabeçalho editorial com régua forte */}
+      <div className="page-head">
+        <p className="kicker">Coordenação</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-brand-deep mt-2 tracking-tight">
+          Nova atividade
+        </h1>
+        <p className="text-brand-deep/60 mt-2 leading-relaxed max-w-xl">
+          Atividades de topo criadas pela coordenação nascem já aprovadas e
+          ficam visíveis para toda a equipa.
+        </p>
       </div>
+
+      <FormNovaAtividade equipa={equipa} pessoaAtualId={pessoa.id} eventos={eventos} />
     </div>
   )
 }

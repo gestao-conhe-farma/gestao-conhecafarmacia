@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, UserCog } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { atualizarNome } from './actions'
 
 export default function CartaoPerfil({ pessoa }) {
@@ -33,28 +33,23 @@ export default function CartaoPerfil({ pessoa }) {
   }
 
   return (
-    <div className="card p-6 md:p-8">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary grid place-items-center">
-          <UserCog size={20} />
-        </span>
-        <h2 className="font-display text-xl font-bold text-brand-deep">Perfil</h2>
-      </div>
-
-      <div className="flex items-center gap-4 mb-6">
+    <div>
+      <div className="flex items-center gap-4">
         <span className="w-16 h-16 rounded-full bg-brand-primary text-white grid place-items-center font-bold text-xl shrink-0">
           {pessoa.nome.split(/\s+/).slice(0, 2).map((p) => p[0].toUpperCase()).join('')}
         </span>
         <div className="min-w-0">
-          <p className="text-sm text-brand-deep/50">Email</p>
-          <p className="font-medium text-brand-deep truncate">{pessoa.email}</p>
-          <span className={`badge mt-1 ${pessoa.role === 'super_admin' ? 'badge-status-concluida' : 'badge-tipo-atividade'}`}>
-            {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
-          </span>
+          <p className="font-bold text-brand-deep text-[15px] flex flex-wrap items-center gap-2">
+            {pessoa.nome}
+            <span className={`role-pill ${pessoa.role === 'super_admin' ? 'role-super' : 'role-membro'}`}>
+              {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
+            </span>
+          </p>
+          <p className="text-[13px] text-brand-deep/50 truncate">{pessoa.email}</p>
         </div>
       </div>
 
-      <form onSubmit={guardar} className="space-y-4">
+      <form onSubmit={guardar} className="space-y-4 mt-6 max-w-md">
         <div className="form-group">
           <label className="form-label" htmlFor="d-nome">Nome</label>
           <input

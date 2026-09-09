@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Direção A — Executive Monolith</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DIREÇÃO A · "Executive Monolith"
+     Escola: arquitetura de informação (Swiss-modern, relatório anual)
+     Premissa: gestão séria = grelha, fios de 1px, números grandes,
+     hierarquia tipográfica forte. Sem cartões flutuantes — tudo
+     estruturado por réguas horizontais, como um relatório impresso.
+     Marca: verde #00493a estrutura, papel #f7f6f2, Inter única.
+     ============================================================ */
+  :root {
+    --green-900: #003528;
+    --green-700: #00493a;
+    --green-500: #0a844f;
+    --paper: #f7f6f2;
+    --ink: #14231d;
+    --ink-60: rgba(20,35,29,.6);
+    --ink-40: rgba(20,35,29,.4);
+    --rule: rgba(20,35,29,.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Sidebar: coluna estrutural escura ---- */
+  aside {
+    background: var(--green-900);
+    color: #fff;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  aside img { height: 34px; display: block; }
+  .side-label {
+    font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+    color: rgba(255,255,255,.45); margin-top: 4px;
+  }
+  nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    color: rgba(255,255,255,.72); text-decoration: none;
+    font-size: 13.5px; font-weight: 500;
+    border-left: 2px solid transparent; border-radius: 0;
+  }
+  nav a.ativo {
+    color: #fff; background: rgba(255,255,255,.06);
+    border-left-color: var(--green-500); font-weight: 600;
+  }
+  nav .num { font-size: 10px; color: rgba(255,255,255,.35); font-weight: 600; width: 18px; }
+  nav .badge {
+    margin-left: auto; background: var(--green-500); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
+  }
+  .side-user {
+    border-top: 1px solid rgba(255,255,255,.14); padding-top: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .side-user .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.12); display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .side-user b { font-size: 13px; display: block; }
+  .side-user span { font-size: 11px; color: rgba(255,255,255,.5); }
+
+  /* ---- Main ---- */
+  main { padding: 0 48px 64px; max-width: 1160px; }
+
+  /* Topbar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; border-bottom: 1px solid var(--rule); margin: 0 -48px; padding: 0 48px;
+  }
+  .topbar .crumb { font-size: 12px; color: var(--ink-40); letter-spacing: .04em; }
+  .topbar .crumb b { color: var(--ink); font-weight: 600; }
+  .top-actions { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
+    transition: all .18s ease;
+  }
+  .btn-solid { background: var(--green-700); color: #fff; }
+  .btn-solid:hover { background: var(--green-500); }
+  .btn-ghost { background: transparent; border-color: var(--rule); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--ink-40); }
+
+  /* Cabeçalho editorial */
+  .head { padding: 44px 0 32px; border-bottom: 2px solid var(--ink); }
+  .kicker {
+    font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--green-500); font-weight: 700; margin-bottom: 14px;
+  }
+  .head h1 {
+    font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05;
+  }
+  .head p { margin-top: 10px; font-size: 15px; color: var(--ink-60); max-width: 560px; }
+  .head .meta {
+    display: flex; gap: 24px; margin-top: 22px;
+    font-size: 12px; color: var(--ink-40);
+  }
+  .head .meta b { color: var(--ink-60); font-weight: 600; }
+
+  /* Banda KPI régua */
+  .kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--rule);
+  }
+  .kpi { padding: 28px 28px 28px 0; border-right: 1px solid var(--rule); }
+  .kpi:last-child { border-right: 0; }
+  .kpi:not(:first-child) { padding-left: 28px; }
+  .kpi .label {
+    font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink-40); font-weight: 600;
+  }
+  .kpi .value {
+    font-size: 44px; font-weight: 800; letter-spacing: -0.03em;
+    margin-top: 10px; font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .kpi .delta { font-size: 12px; margin-top: 8px; color: var(--ink-60); }
+  .kpi .delta b { color: var(--green-500); font-weight: 700; }
+
+  /* Secções numeradas */
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 40px 0 18px;
+  }
+  .section-head h2 {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .section-head h2 .idx { font-size: 11px; color: var(--green-500); font-weight: 700; letter-spacing: .1em; }
+  .pills { display: flex; gap: 2px; }
+  .pill {
+    font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+    padding: 7px 14px; border: 0; background: transparent; color: var(--ink-60);
+    border-bottom: 2px solid transparent;
+  }
+  .pill.ativo { color: var(--ink); font-weight: 700; border-bottom-color: var(--green-700); }
+
+  /* Lista tipo tabela editorial */
+  .rows { border-top: 1px solid var(--rule); }
+  .row {
+    display: grid; grid-template-columns: 90px 1fr 200px 110px;
+    gap: 20px; align-items: center;
+    padding: 18px 0; border-bottom: 1px solid var(--rule);
+    transition: background .15s;
+  }
+  .row:hover { background: rgba(0,73,58,.03); }
+  .row .data { font-size: 12px; color: var(--ink-40); font-variant-numeric: tabular-nums; }
+  .row .data b { display: block; font-size: 15px; color: var(--ink); font-weight: 700; letter-spacing: -0.01em; }
+  .row .tit { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .row .tit small { display: block; font-weight: 400; color: var(--ink-60); font-size: 12.5px; margin-top: 3px; }
+  .row .resp { font-size: 12.5px; color: var(--ink-60); display: flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+  .dot.g { background: var(--green-500); } .dot.a { background: #d97706; } .dot.r { background: #dc2626; }
+  .tag {
+    font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-40);
+  }
+
+  .foot { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-40); }
+</style>
+</head>
+<body>
+
+<aside>
+  <div>
+    <img src="logo-principal-branco.svg" alt="Conheça Farmácia">
+    <div class="side-label">Gestão Interna</div>
+  </div>
+  <nav>
+    <a class="ativo"><span class="num">01</span>Início</a>
+    <a><span class="num">02</span>Atividades</a>
+    <a><span class="num">03</span>Aprovações <span class="badge">3</span></a>
+    <a><span class="num">04</span>Entrevistas <span class="badge">1</span></a>
+    <a><span class="num">05</span>Documentos</a>
+    <a><span class="num">06</span>Equipa</a>
+    <a><span class="num">07</span>Definições</a>
+  </nav>
+  <div class="side-user">
+    <div class="avatar">BL</div>
+    <div><b>Baptista Lima</b><span>Coordenação</span></div>
+  </div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <span class="crumb">Conheça Farmácia / <b>Painel</b></span>
+    <div class="top-actions">
+      <button class="btn btn-ghost">Exportar</button>
+      <button class="btn btn-solid">Nova atividade</button>
+    </div>
+  </div>
+
+  <header class="head">
+    <div class="kicker">Painel · Semana 37</div>
+    <h1>Olá, Baptista</h1>
+    <p>Resumo do estado da organização: o que está aprovado, o que aguarda decisão e o que está em curso.</p>
+    <div class="meta">
+      <span>Atualizado <b>hoje, 09:41</b></span>
+      <span>Pendências da coordenação <b>3 subtarefas</b></span>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="label">Atividades</div><div class="value">12</div><div class="delta"><b>+2</b> esta semana</div></div>
+    <div class="kpi"><div class="label">Eventos</div><div class="value">4</div><div class="delta">1 em andamento</div></div>
+    <div class="kpi"><div class="label">Entrevistas</div><div class="value">6</div><div class="delta"><b>4</b> confirmadas</div></div>
+    <div class="kpi"><div class="label">Tarefas em curso</div><div class="value">18</div><div class="delta"><b>2</b> em atraso</div></div>
+  </section>
+
+  <div class="section-head">
+    <h2><span class="idx">01</span>O que está a acontecer</h2>
+    <div class="pills">
+      <button class="pill ativo">Todas</button>
+      <button class="pill">Atividades</button>
+      <button class="pill">Eventos</button>
+      <button class="pill">Entrevistas</button>
+    </div>
+  </div>
+
+  <div class="rows">
+    <div class="row">
+      <div class="data"><b>18</b>SET</div>
+      <div class="tit">Campanha de rastreio de tensão arterial<small>Campanha comunitária em parceria com a ordem</small></div>
+      <div class="resp"><span class="dot g"></span>Maria D., João S.</div>
+      <div class="tag">Atividade</div>
+    </div>
+    <div class="row">
+      <div class="data"><b>04</b>OUT</div>
+      <div class="tit">Congresso Saúde em Foco<small>Evento anual · 3 subtarefas em curso</small></div>
+      <div class="resp"><span class="dot a"></span>Equipa Conteúdos</div>
+      <div class="tag">Evento</div>
+    </div>
+    <div class="row">
+      <div class="data"><b>09</b>OUT</div>
+      <div class="tit">Entrevista — Novos Medicamentos<small>Participantes confirmados: 3 de 5</small></div>
+      <div class="resp"><span class="dot g"></span>Baptista L.</div>
+      <div class="tag">Entrevista</div>
+    </div>
+    <div class="row">
+      <div class="data"><b>21</b>OUT</div>
+      <div class="tit">Formação Boas Práticas de Armazenamento<small>Carta enviada à ANF · aguarda resposta</small></div>
+      <div class="resp"><span class="dot r"></span>Ana P.</div>
+      <div class="tag">Atividade</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Conheça Farmácia · Plataforma de gestão interna</span>
+    <span>v1.0 · Acesso restrito à equipa</span>
+  </div>
+</main>
+
+</body>
+</html>

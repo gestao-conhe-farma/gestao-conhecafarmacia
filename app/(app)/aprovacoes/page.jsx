@@ -13,16 +13,20 @@ export default async function PaginaAprovacoes() {
 
   return (
     <div className="container-app max-w-3xl">
-      <h1 className="font-display text-3xl font-bold text-brand-deep mb-2">
-        Aprovações
-      </h1>
-      <p className="text-brand-deep/60 mb-8">
-        Subtarefas criadas por membros que aguardam a decisão da coordenação.
-      </p>
+      {/* Cabeçalho editorial com régua forte */}
+      <div className="page-head">
+        <p className="kicker">Coordenação</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-brand-deep mt-2 tracking-tight">
+          Aprovações
+        </h1>
+        <p className="text-brand-deep/60 mt-2 leading-relaxed max-w-xl">
+          Subtarefas criadas por membros que aguardam a decisão da coordenação.
+        </p>
+      </div>
 
-      <div className="card p-6 md:p-8">
+      <div>
         {pendentes.length === 0 ? (
-          <p className="text-sm text-brand-deep/50 py-8 text-center">
+          <p className="text-sm text-brand-deep/50 py-4">
             Tudo em ordem — sem subtarefas pendentes.
           </p>
         ) : (

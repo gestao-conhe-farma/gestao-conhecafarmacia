@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CalendarDays, Clock, Users } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { getUtilizadorAtual } from '@/lib/supabase/server'
 import {
   obterAtividade,
@@ -34,19 +34,24 @@ export default async function PaginaAtividade({ params }) {
   const meuConvite = participantes.find((p) => p.pessoa_id === pessoa.id)
   const confirmadas = participantes.filter((p) => p.status === 'confirmado').length
 
+  // Numeração editorial das secções — a entrevista/evento conta como 01
+  const temSecaoExtra = atividade.tipo === 'entrevista' || atividade.tipo === 'evento'
+  const numSubtarefas = temSecaoExtra ? '02' : '01'
+  const numNova = temSecaoExtra ? '03' : '02'
+
   return (
     <div className="container-app max-w-4xl">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm text-brand-deep/60 hover:text-brand-primary mb-6"
+        className="inline-flex items-center gap-2 text-sm text-brand-deep/55 hover:text-brand-primary mb-7 transition-colors"
       >
         <ArrowLeft size={15} />
         Voltar ao início
       </Link>
 
-      {/* Cabeçalho */}
-      <div className="card p-6 md:p-8 mb-6">
-        <div className="flex flex-wrap items-center gap-2 mb-3">
+      {/* Cabeçalho editorial: sem cartão, régua forte */}
+      <header className="page-head">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className={`badge ${classeTipo(atividade.tipo)}`}>{rotuloTipo(atividade.tipo)}</span>
           {atividade.tipo === 'evento' && atividade.status_evento && (
             <span className="badge badge-status-pendente normal-case">
@@ -54,35 +59,41 @@ export default async function PaginaAtividade({ params }) {
             </span>
           )}
         </div>
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-brand-deep leading-tight">
+
+        <h1 className="text-2xl md:text-[34px] font-extrabold text-brand-deep leading-[1.15] tracking-tight">
           {atividade.titulo}
         </h1>
+
         {atividade.descricao && (
-          <p className="text-brand-deep/70 mt-3 leading-relaxed whitespace-pre-line">
+          <p className="text-brand-deep/65 mt-4 leading-relaxed max-w-2xl whitespace-pre-line">
             {atividade.descricao}
           </p>
         )}
 
-        <div className="mt-5 pt-5 border-t border-brand-divider/60 flex flex-wrap gap-x-8 gap-y-2 text-sm text-brand-deep/60">
+        {/* Meta strip com etiquetas */}
+        <div className="mt-7 flex flex-wrap gap-x-10 gap-y-4">
           {atividade.prazo && (
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays size={15} className="text-brand-accent" />
-              Prazo: {formatarData(atividade.prazo)}
-            </span>
+            <div>
+              <span className="meta-label">Prazo</span>
+              <span className="text-sm font-semibold text-brand-deep">
+                {formatarData(atividade.prazo)}
+              </span>
+            </div>
           )}
-          <span className="inline-flex items-center gap-1.5">
-            <Users size={15} className="text-brand-accent" />
-            Responsáveis:{' '}
-            <strong className="text-brand-deep">
-              {atividade.atividade_responsaveis?.map((r) => r.pessoas?.nome).join(', ') ||
-                '—'}
-            </strong>
-          </span>
-          <span>
-            Criada por <strong className="text-brand-deep">{atividade.criado_por?.nome}</strong>
-          </span>
+          <div className="min-w-0">
+            <span className="meta-label">Responsáveis</span>
+            <span className="text-sm font-semibold text-brand-deep">
+              {atividade.atividade_responsaveis?.map((r) => r.pessoas?.nome).join(', ') || '—'}
+            </span>
+          </div>
+          <div>
+            <span className="meta-label">Criada por</span>
+            <span className="text-sm font-semibold text-brand-deep">
+              {atividade.criado_por?.nome}
+            </span>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Entrevista */}
       {atividade.tipo === 'entrevista' && (
@@ -93,6 +104,7 @@ export default async function PaginaAtividade({ params }) {
           meuConvite={meuConvite ?? null}
           equipa={equipa}
           confirmadas={confirmadas}
+          num="01"
         />
       )}
 
@@ -103,38 +115,47 @@ export default async function PaginaAtividade({ params }) {
           status={atividade.status_evento}
           ehSuper={ehSuper}
           filhas={filhas}
+          num="01"
         />
       )}
 
-      {/* Subtarefas */}
-      <div className="card p-6 md:p-8 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-bold text-brand-deep">
-            Subtarefas
-          </h2>
-          <span className="text-sm text-brand-deep/50">
-            {subtarefas.filter((s) => s.status === 'concluida').length}/{subtarefas.length} concluídas
-          </span>
+      {/* Secções numeradas */}
+      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+        <span className="sec-num">{numSubtarefas}</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-bold text-brand-deep tracking-tight">Subtarefas</h2>
+            <span className="text-sm text-brand-deep/45 tabular-nums">
+              <strong className="text-brand-deep">
+                {subtarefas.filter((s) => s.status === 'concluida').length}
+              </strong>
+              /{subtarefas.length} concluídas
+            </span>
+          </div>
+          <div className="mt-4">
+            <ListaSubtarefas
+              atividadeId={id}
+              subtarefas={subtarefas}
+              ehSuper={ehSuper}
+              pessoaAtualId={pessoa.id}
+            />
+          </div>
         </div>
-        <ListaSubtarefas
-          atividadeId={id}
-          subtarefas={subtarefas}
-          ehSuper={ehSuper}
-          pessoaAtualId={pessoa.id}
-        />
-      </div>
+      </section>
 
-      {/* Criar subtarefa (dentro desta atividade) */}
-      <div className="card p-6 md:p-8">
-        <h2 className="font-display text-xl font-bold text-brand-deep mb-1">
-          Nova subtarefa
-        </h2>
-        <p className="text-sm text-brand-deep/55 mb-6">
-          Subtarefas criadas por membros passam por aprovação da coordenação antes
-          de ficarem visíveis.
-        </p>
-        <FormSubtarefaInline atividadeId={id} equipa={equipa} />
-      </div>
+      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+        <span className="sec-num">{numNova}</span>
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">Nova subtarefa</h2>
+          <p className="text-[13.5px] text-brand-deep/55 mt-1 leading-relaxed max-w-xl">
+            Subtarefas criadas por membros passam por aprovação da coordenação
+            antes de ficarem visíveis.
+          </p>
+          <div className="mt-5">
+            <FormSubtarefaInline atividadeId={id} equipa={equipa} />
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

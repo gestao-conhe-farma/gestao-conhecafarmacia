@@ -96,10 +96,10 @@ export default function FormSubtarefaInline({ atividadeId, equipa }) {
                       : [...atual, p.id]
                   )
                 }
-                className={`px-3 py-1.5 rounded-full text-sm border-2 transition-all ${
+                className={`chip-btn ${
                   responsaveis.includes(p.id)
-                    ? 'border-brand-accent bg-brand-accent/10 text-brand-accent font-semibold'
-                    : 'border-brand-divider text-brand-deep/60 hover:border-brand-accent/50'
+                    ? 'chip-btn-on'
+                    : 'chip-btn-off'
                 }`}
               >
                 {p.nome}

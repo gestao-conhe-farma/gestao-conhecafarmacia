@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, EyeOff, KeyRound, Loader2, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react'
 import { alterarPalavraPasse } from './actions'
 
 export default function CartaoPalavraPasse() {
@@ -52,18 +52,8 @@ export default function CartaoPalavraPasse() {
   const corForca = ['bg-red-500', 'bg-red-500', 'bg-amber-500', 'bg-brand-accent', 'bg-brand-accent'][forca]
 
   return (
-    <div className="card p-6 md:p-8">
-      <div className="flex items-center gap-3 mb-2">
-        <span className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary grid place-items-center">
-          <KeyRound size={20} />
-        </span>
-        <h2 className="font-display text-xl font-bold text-brand-deep">Palavra-passe</h2>
-      </div>
-      <p className="text-sm text-brand-deep/55 mb-6">
-        Usa pelo menos 8 caracteres, com maiúsculas, números e símbolos.
-      </p>
-
-      <form onSubmit={guardar} className="space-y-4">
+    <div>
+      <form onSubmit={guardar} className="space-y-4 max-w-md">
         <div className="form-group">
           <label className="form-label" htmlFor="p-atual">Palavra-passe atual</label>
           <div className="relative">

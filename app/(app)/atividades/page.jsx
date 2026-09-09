@@ -16,19 +16,25 @@ export default async function PaginaAtividades({ searchParams }) {
 
   return (
     <div className="container-app">
-      <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-brand-deep">Atividades</h1>
-          <p className="text-brand-deep/60 mt-1">
-            Todas as atividades, eventos e entrevistas criadas pela coordenação.
-          </p>
+      {/* Cabeçalho editorial com régua forte */}
+      <div className="page-head">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="kicker">Planeamento</p>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-brand-deep mt-2 tracking-tight">
+              Atividades
+            </h1>
+            <p className="text-brand-deep/60 mt-2 max-w-xl leading-relaxed">
+              Todas as atividades, eventos e entrevistas criadas pela coordenação.
+            </p>
+          </div>
+          {pessoa.role === 'super_admin' && (
+            <Link href="/atividades/nova" className="btn btn-primary shrink-0">
+              <Plus size={16} />
+              Nova atividade
+            </Link>
+          )}
         </div>
-        {pessoa.role === 'super_admin' && (
-          <Link href="/atividades/nova" className="btn btn-primary">
-            <Plus size={16} />
-            Nova atividade
-          </Link>
-        )}
       </div>
 
       <div className="mb-6">
@@ -36,7 +42,7 @@ export default async function PaginaAtividades({ searchParams }) {
       </div>
 
       {atividades.length === 0 ? (
-        <div className="card empty-state">
+        <div className="empty-state">
           <ClipboardList size={36} className="mx-auto mb-3 text-brand-accent/50" />
           <p className="font-semibold text-brand-deep">Sem atividades neste filtro</p>
           <p className="text-sm mt-1">

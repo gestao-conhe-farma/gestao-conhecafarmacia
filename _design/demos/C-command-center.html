@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Direção C — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DIREÇÃO C · "Command Center"
+     Escola: product-motion tech (Linear/Vercel school)
+     Premissa: um gestor moderno quer DENSIDADE ÚTIL e velocidade.
+     Dark-first, vidro fosco, dados tabulares, foco tipo spotlight,
+     micro-labels em caps. O verde da marca é o acento luminoso.
+     ============================================================ */
+  :root {
+    --green-500: #10b981;
+    --green-700: #0a844f;
+    --bg: #0a100e;
+    --panel: rgba(255,255,255,.035);
+    --panel-solid: #101715;
+    --line: rgba(255,255,255,.08);
+    --ink: #eef4f1;
+    --ink-60: rgba(238,244,241,.6);
+    --ink-35: rgba(238,244,241,.35);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background:
+      radial-gradient(900px 420px at 15% -10%, rgba(16,185,129,.09), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    display: grid;
+    grid-template-columns: 224px 1fr;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Sidebar de vidro ---- */
+  aside {
+    background: rgba(255,255,255,.03);
+    border-right: 1px solid var(--line);
+    padding: 26px 16px;
+    display: flex; flex-direction: column; gap: 24px;
+    backdrop-filter: blur(20px);
+  }
+  aside img { height: 32px; display: block; filter: brightness(0) invert(1); opacity: .9; }
+  .side-label {
+    font-size: 9.5px; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--green-500); font-weight: 700; margin-top: 6px;
+  }
+  nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 9px;
+    color: var(--ink-60); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: all .15s ease;
+  }
+  nav a:hover { background: rgba(255,255,255,.05); color: var(--ink); }
+  nav a.ativo {
+    background: linear-gradient(90deg, rgba(16,185,129,.16), rgba(16,185,129,.05));
+    color: #fff; font-weight: 600;
+    box-shadow: inset 0 0 0 1px rgba(16,185,129,.25);
+  }
+  nav .badge {
+    margin-left: auto; background: var(--green-700); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
+  }
+  .side-user {
+    border-top: 1px solid var(--line); padding-top: 16px;
+    display: flex; align-items: center; gap: 11px;
+  }
+  .side-user .avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--green-700), var(--green-500));
+    display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .side-user b { font-size: 12.5px; display: block; }
+  .side-user span { font-size: 10.5px; color: var(--ink-35); }
+
+  /* ---- Main ---- */
+  main { padding: 0 44px 64px; max-width: 1180px; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px; margin: 0 -44px; padding: 0 44px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,.015);
+  }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+    padding: 7px 12px; width: 300px; font-size: 12.5px; color: var(--ink-35);
+  }
+  .search kbd {
+    margin-left: auto; font-family: inherit; font-size: 10px; font-weight: 700;
+    border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--ink-35);
+  }
+  .top-actions { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    padding: 8px 16px; border-radius: 9px; border: 1px solid transparent;
+    transition: all .15s ease;
+  }
+  .btn-solid {
+    background: linear-gradient(180deg, var(--green-500), var(--green-700));
+    color: #04110b; font-weight: 700;
+    box-shadow: 0 0 0 1px rgba(16,185,129,.3), 0 8px 20px -8px rgba(16,185,129,.5);
+  }
+  .btn-ghost { background: var(--panel); border-color: var(--line); color: var(--ink-60); }
+  .btn-ghost:hover { color: var(--ink); border-color: rgba(255,255,255,.18); }
+
+  /* Cabeçalho com foco de attention */
+  .head { padding: 38px 0 28px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .kicker {
+    font-size: 10px; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--green-500); font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green-500);
+    box-shadow: 0 0 12px var(--green-500); }
+  .head h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.025em; }
+  .head p { margin-top: 6px; font-size: 13.5px; color: var(--ink-60); }
+  .head p b { color: var(--ink); }
+
+  /* Grelha de métricas com sparkbars */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 36px; }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .kpi .top { display: flex; justify-content: space-between; align-items: center; }
+  .kpi .label { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-35); font-weight: 600; }
+  .kpi .up { font-size: 10px; font-weight: 700; color: var(--green-500); }
+  .kpi .value {
+    font-size: 30px; font-weight: 800; letter-spacing: -0.03em; margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .spark { display: flex; gap: 3px; align-items: flex-end; height: 22px; margin-top: 12px; }
+  .spark i { flex: 1; background: rgba(16,185,129,.35); border-radius: 2px 2px 0 0; min-height: 3px; }
+  .spark i.hot { background: var(--green-500); }
+
+  /* Tabela de operações */
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .section-head h2 {
+    font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ink-35); font-weight: 700;
+  }
+  .pills { display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); padding: 3px; border-radius: 10px; }
+  .pill {
+    font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+    padding: 6px 13px; border: 0; background: transparent; color: var(--ink-60);
+    border-radius: 7px; transition: all .15s;
+  }
+  .pill.ativo { background: rgba(255,255,255,.09); color: #fff; }
+
+  .ops { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.015); }
+  .op {
+    display: grid; grid-template-columns: 1fr 150px 120px 100px;
+    gap: 16px; align-items: center;
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    transition: background .12s; cursor: pointer;
+  }
+  .op:last-child { border-bottom: 0; }
+  .op:hover { background: rgba(255,255,255,.03); }
+  .op .tit { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+  .op .tit .ic {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 11px; font-weight: 800;
+  }
+  .ic.at { background: rgba(16,185,129,.12); color: var(--green-500); }
+  .ic.ev { background: rgba(59,130,246,.12); color: #60a5fa; }
+  .ic.en { background: rgba(249,115,22,.12); color: #fb923c; }
+  .op .tit small { display: block; font-weight: 400; color: var(--ink-35); font-size: 11.5px; margin-top: 2px; }
+  .op .resp { font-size: 12px; color: var(--ink-60); }
+  .op .prazo { font-size: 12px; color: var(--ink-35); font-variant-numeric: tabular-nums; }
+  .op .prazo b { color: var(--ink-60); font-weight: 600; }
+  .estado { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 99px; justify-self: start; }
+  .estado.ok { background: rgba(16,185,129,.1); color: var(--green-500); box-shadow: inset 0 0 0 1px rgba(16,185,129,.25); }
+  .estado.espera { background: rgba(217,119,6,.1); color: #fbbf24; box-shadow: inset 0 0 0 1px rgba(217,119,6,.25); }
+  .estado.urgente { background: rgba(220,38,38,.1); color: #f87171; box-shadow: inset 0 0 0 1px rgba(220,38,38,.25); }
+
+  .foot { margin-top: 48px; display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--ink-35); }
+</style>
+</head>
+<body>
+
+<aside>
+  <div>
+    <img src="logo-principal-branco.svg" alt="Conheça Farmácia">
+    <div class="side-label">Gestão Interna</div>
+  </div>
+  <nav>
+    <a class="ativo">Início</a>
+    <a>Atividades</a>
+    <a>Aprovações <span class="badge">3</span></a>
+    <a>Entrevistas <span class="badge">1</span></a>
+    <a>Documentos</a>
+    <a>Equipa</a>
+    <a>Definições</a>
+  </nav>
+  <div class="side-user">
+    <div class="avatar">BL</div>
+    <div><b>Baptista Lima</b><span>Coordenação</span></div>
+  </div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div class="search">Pesquisar atividades… <kbd>⌘K</kbd></div>
+    <div class="top-actions">
+      <button class="btn btn-ghost">Exportar</button>
+      <button class="btn btn-solid">Nova atividade</button>
+    </div>
+  </div>
+
+  <header class="head">
+    <div>
+      <div class="kicker">Operação em dia</div>
+      <h1>Olá, Baptista</h1>
+      <p><b>4 ações</b> requerem a tua atenção · resto em curso dentro do prazo.</p>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi">
+      <div class="top"><span class="label">Atividades</span><span class="up">+2</span></div>
+      <div class="value">12</div>
+      <div class="spark"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:70%"></i><i class="hot" style="height:100%"></i></div>
+    </div>
+    <div class="kpi">
+      <div class="top"><span class="label">Eventos</span><span class="up">1 em curso</span></div>
+      <div class="value">4</div>
+      <div class="spark"><i style="height:40%"></i><i style="height:40%"></i><i style="height:65%"></i><i style="height:55%"></i><i class="hot" style="height:90%"></i></div>
+    </div>
+    <div class="kpi">
+      <div class="top"><span class="label">Entrevistas</span><span class="up">4/6 conf.</span></div>
+      <div class="value">6</div>
+      <div class="spark"><i style="height:25%"></i><i style="height:50%"></i><i style="height:60%"></i><i class="hot" style="height:85%"></i><i style="height:75%"></i></div>
+    </div>
+    <div class="kpi">
+      <div class="top"><span class="label">Tarefas</span><span class="up" style="color:#fbbf24">2 atraso</span></div>
+      <div class="value">18</div>
+      <div class="spark"><i style="height:35%"></i><i style="height:60%"></i><i class="hot" style="height:95%"></i><i style="height:70%"></i><i style="height:80%"></i></div>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h2>Operações recentes</h2>
+    <div class="pills">
+      <button class="pill ativo">Todas</button>
+      <button class="pill">Ativ.</button>
+      <button class="pill">Eventos</button>
+      <button class="pill">Entrev.</button>
+    </div>
+  </div>
+
+  <div class="ops">
+    <div class="op">
+      <div class="tit"><span class="ic at">AT</span><div>Campanha de rastreio de tensão arterial<small>Campanha comunitária · 5 subtarefas</small></div></div>
+      <div class="resp">Maria D., João S.</div>
+      <div class="prazo"><b>18 Set</b> · 9 dias</div>
+      <span class="estado ok">Em curso</span>
+    </div>
+    <div class="op">
+      <div class="tit"><span class="ic ev">EV</span><div>Congresso Saúde em Foco<small>Evento anual · 3 subtarefas em curso</small></div></div>
+      <div class="resp">Equipa Conteúdos</div>
+      <div class="prazo"><b>04 Out</b> · 25 dias</div>
+      <span class="estado espera">Aguarda</span>
+    </div>
+    <div class="op">
+      <div class="tit"><span class="ic en">EN</span><div>Entrevista — Novos Medicamentos<small>3 de 5 participantes confirmados</small></div></div>
+      <div class="resp">Baptista L.</div>
+      <div class="prazo"><b>09 Out</b> · 30 dias</div>
+      <span class="estado ok">Confirmada</span>
+    </div>
+    <div class="op">
+      <div class="tit"><span class="ic at">AT</span><div>Formação Boas Práticas de Armazenamento<small>Carta enviada à ANF · aguarda resposta</small></div></div>
+      <div class="resp">Ana P.</div>
+      <div class="prazo"><b>21 Out</b> · atrasada</div>
+      <span class="estado urgente">Em atraso</span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Conheça Farmácia · Plataforma de gestão interna</span>
+    <span>Acesso restrito · v1.0</span>
+  </div>
+</main>
+
+</body>
+</html>

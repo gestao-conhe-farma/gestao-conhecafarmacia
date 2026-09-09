@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Página F — Definições · Executive Monolith</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-primary: #00493a; --brand-accent: #0a844f; --brand-deep: #14231d;
+    --bg: #f7f6f2; --bg-alt: #efede7; --card: #fcfbf9; --divider: #e3e1da;
+    --sidebar: #003528; --sidebar-text: rgba(255,255,255,0.62);
+    --ink: #14231d; --muted: rgba(20,35,29,0.58); --shadow: 0 4px 20px rgba(0,42,50,0.05);
+  }
+  html[data-theme="dark"] {
+    --brand-primary: #0f7a5c; --brand-accent: #10b981; --brand-deep: #e6ebe8;
+    --bg: #0c1210; --bg-alt: #101815; --card: #131c18; --divider: #22302a;
+    --sidebar: #0a0f0d; --sidebar-text: rgba(230,235,232,0.55);
+    --ink: #f2f6f4; --muted: rgba(230,235,232,0.58); --shadow: 0 4px 24px rgba(0,0,0,0.35);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+  body { font-family:'Inter',ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--ink); display:grid; grid-template-columns:248px 1fr; min-height:100dvh; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { letter-spacing:-0.025em; }
+  button { font-family:inherit; cursor:pointer; }
+  :focus-visible { outline:2px solid var(--brand-accent); outline-offset:2px; border-radius:6px; }
+
+  aside { background:var(--sidebar); color:var(--sidebar-text); padding:28px 20px; display:flex; flex-direction:column; gap:6px; position:sticky; top:0; height:100dvh; }
+  .logo { color:#fff; font-weight:800; font-size:15px; margin-bottom:6px; padding-left:12px; display:flex; align-items:center; gap:10px; }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:500; color:var(--sidebar-text); text-decoration:none; border-left:2px solid transparent; }
+  .nav-item .num { font-size:10px; font-weight:700; opacity:0.5; letter-spacing:0.08em; width:20px; font-variant-numeric:tabular-nums; }
+  .nav-item:hover { color:#fff; background:rgba(255,255,255,0.05); }
+  .nav-item.active { color:#fff; border-left-color:var(--brand-accent); background:rgba(255,255,255,0.04); font-weight:600; }
+  .sidebar-foot { margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.09); display:flex; align-items:center; gap:10px; font-size:12.5px; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.1); color:#fff; display:grid; place-items:center; font-size:11px; font-weight:700; }
+  .theme-toggle { margin-left:auto; background:transparent; border:1px solid var(--divider); color:var(--ink); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; }
+  .theme-toggle:hover { border-color:var(--brand-accent); }
+
+  .page { padding:40px 48px; max-width:1000px; }
+  .page-head { padding-bottom:22px; border-bottom:2px solid var(--ink); margin-bottom:30px; }
+  html[data-theme="dark"] .page-head { border-bottom-color:var(--divider); }
+  .kicker { font-size:10.5px; letter-spacing:0.22em; text-transform:uppercase; font-weight:700; color:var(--brand-accent); }
+  .page-head h1 { font-size:34px; font-weight:800; margin-top:8px; }
+  .page-head p { color:var(--muted); margin-top:6px; font-size:14.5px; }
+
+  /* ---- Secções numeradas: linguagem editorial, sem cartões flutuantes ---- */
+  .sec { display:grid; grid-template-columns:64px 1fr; gap:20px; padding:28px 0; border-top:1px solid var(--divider); }
+  .sec:first-of-type { border-top:2px solid var(--ink); }
+  html[data-theme="dark"] .sec:first-of-type { border-top-color:var(--divider); }
+  .sec-num { font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--muted); font-variant-numeric:tabular-nums; padding-top:4px; }
+  .sec-title { font-size:17px; font-weight:700; }
+  .sec-desc { font-size:13.5px; color:var(--muted); margin-top:4px; line-height:1.55; }
+  .sec-body { margin-top:20px; }
+
+  /* Perfil */
+  .profile-row { display:flex; align-items:center; gap:16px; }
+  .big-avatar { width:60px; height:60px; border-radius:50%; background:var(--brand-primary); color:#fff; display:grid; place-items:center; font-size:19px; font-weight:800; }
+  .p-name { font-size:16px; font-weight:700; }
+  .p-meta { font-size:13px; color:var(--muted); margin-top:2px; }
+  .role-pill { font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:4px 10px; border-radius:99px; background:rgba(10,132,79,0.12); color:var(--brand-accent); display:inline-flex; margin-left:8px; vertical-align:2px; }
+  .name-edit { display:flex; gap:10px; margin-top:18px; max-width:420px; }
+  .name-edit input { flex:1; padding:10px 13px; border-radius:8px; border:1px solid var(--divider); background:var(--card); color:var(--ink); font-family:inherit; font-size:13.5px; outline:none; }
+  .name-edit input:focus { border-color:var(--brand-accent); box-shadow:0 0 0 3px rgba(10,132,79,0.15); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px; border-radius:8px; font-size:13.5px; font-weight:600; border:none; }
+  .btn-primary { background:var(--brand-primary); color:#fff; }
+  .btn-primary:hover { background:var(--brand-accent); }
+  .btn-ghost { background:transparent; border:1px solid var(--divider); color:var(--ink); }
+  .btn-ghost:hover { border-color:var(--ink); }
+
+  /* Password: medidor de força editorial */
+  .pw-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:560px; }
+  .pw-grid .full { grid-column:1/-1; }
+  .field label { display:block; font-size:12px; font-weight:700; margin-bottom:6px; }
+  .field input { width:100%; padding:10px 13px; border-radius:8px; border:1px solid var(--divider); background:var(--card); color:var(--ink); font-family:inherit; font-size:13.5px; outline:none; }
+  .field input:focus { border-color:var(--brand-accent); box-shadow:0 0 0 3px rgba(10,132,79,0.15); }
+  .field input::placeholder { color:var(--muted); }
+  .meter { display:flex; gap:6px; margin-top:10px; max-width:560px; }
+  .meter span { height:4px; flex:1; border-radius:99px; background:var(--bg-alt); border:1px solid var(--divider); }
+  .meter span.on { background:var(--brand-accent); border-color:var(--brand-accent); }
+  .meter-label { font-size:11.5px; color:var(--muted); margin-top:6px; }
+
+  /* Aparência: switch */
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; max-width:560px; }
+  .toggle-row .t-label { font-size:14px; font-weight:600; }
+  .toggle-row .t-hint { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .switch { position:relative; width:46px; height:26px; border-radius:99px; background:var(--bg-alt); border:1px solid var(--divider); cursor:pointer; }
+  .switch .knob { position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--ink); transition:left .2s ease; }
+  .switch.on { background:var(--brand-accent); border-color:var(--brand-accent); }
+  .switch.on .knob { left:22px; background:#fff; }
+
+  /* Sessão */
+  .session-note { font-size:13px; color:var(--muted); max-width:520px; line-height:1.6; }
+  .btn-danger { background:transparent; border:1px solid rgba(220,38,38,0.4); color:#dc2626; }
+  html[data-theme="dark"] .btn-danger { color:#f87171; border-color:rgba(248,113,113,0.4); }
+  .btn-danger:hover { background:rgba(220,38,38,0.08); }
+
+  @media (max-width: 900px) {
+    body { grid-template-columns:1fr; } aside { display:none; } .page { padding:24px 20px; }
+    .sec { grid-template-columns:1fr; gap:6px; }
+    .pw-grid { grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body>
+  <aside>
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="#10b981" stroke-width="1.6"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Conheça Farmácia
+    </div>
+    <a class="nav-item" href="#"><span class="num">01</span> Início</a>
+    <a class="nav-item" href="#"><span class="num">02</span> Atividades</a>
+    <a class="nav-item" href="#"><span class="num">03</span> Documentos</a>
+    <a class="nav-item" href="#"><span class="num">04</span> Entrevistas</a>
+    <a class="nav-item" href="#"><span class="num">05</span> Aprovações</a>
+    <a class="nav-item" href="#"><span class="num">06</span> Equipa</a>
+    <a class="nav-item active" href="#"><span class="num">07</span> Definições</a>
+    <div class="sidebar-foot">
+      <div class="avatar">BL</div>
+      <div><div style="color:#fff;font-weight:600;">Baptista Lima</div><div style="font-size:11px;opacity:0.7;">Coordenação</div></div>
+    </div>
+  </aside>
+
+  <main class="page">
+    <div class="page-head">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <p class="kicker">Conta</p>
+          <h1>Definições</h1>
+          <p>Gere a tua conta, segurança e preferências da plataforma.</p>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">Modo escuro</button>
+      </div>
+    </div>
+
+    <!-- 01 · Perfil -->
+    <section class="sec">
+      <div class="sec-num">01</div>
+      <div>
+        <h2 class="sec-title">Perfil</h2>
+        <p class="sec-desc">O nome aparece no dashboard, nas atividades e nos documentos que crias.</p>
+        <div class="sec-body">
+          <div class="profile-row">
+            <div class="big-avatar">BL</div>
+            <div>
+              <div class="p-name">Baptista Lima <span class="role-pill">Coordenação</span></div>
+              <div class="p-meta">baptistalimab@gmail.com</div>
+            </div>
+          </div>
+          <div class="name-edit">
+            <input type="text" value="Baptista Lima" aria-label="Nome completo">
+            <button class="btn btn-primary">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 · Palavra-passe -->
+    <section class="sec">
+      <div class="sec-num">02</div>
+      <div>
+        <h2 class="sec-title">Palavra-passe</h2>
+        <p class="sec-desc">Ao alterar, as sessões noutros dispositivos são terminadas automaticamente.</p>
+        <div class="sec-body">
+          <div class="pw-grid">
+            <div class="field full">
+              <label for="atual">Palavra-passe atual</label>
+              <input id="atual" type="password" placeholder="••••••••">
+            </div>
+            <div class="field">
+              <label for="nova">Nova palavra-passe</label>
+              <input id="nova" type="password" placeholder="Mínimo 8 caracteres">
+            </div>
+            <div class="field">
+              <label for="conf">Confirmar nova</label>
+              <input id="conf" type="password" placeholder="Repete a nova palavra-passe">
+            </div>
+          </div>
+          <div class="meter" aria-hidden="true">
+            <span class="on"></span><span class="on"></span><span></span><span></span>
+          </div>
+          <p class="meter-label">Força: média — adiciona símbolos para reforçar</p>
+          <div style="margin-top:18px;">
+            <button class="btn btn-primary">Alterar palavra-passe</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 · Aparência -->
+    <section class="sec">
+      <div class="sec-num">03</div>
+      <div>
+        <h2 class="sec-title">Aparência</h2>
+        <p class="sec-desc">O tema é guardado neste dispositivo.</p>
+        <div class="sec-body">
+          <div class="toggle-row">
+            <div>
+              <div class="t-label">Modo escuro</div>
+              <div class="t-hint">Ideal para uso noturno — este demo alterna o tema real da página</div>
+            </div>
+            <div class="switch" id="darkSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleTheme(true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTheme(true)}"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 · Sessão -->
+    <section class="sec">
+      <div class="sec-num">04</div>
+      <div>
+        <h2 class="sec-title">Sessão</h2>
+        <p class="sec-desc">Termina a sessão neste dispositivo ou em todos os dispositivos onde a conta está ativa.</p>
+        <div class="sec-body" style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-ghost">Terminar sessão aqui</button>
+          <button class="btn btn-danger">Terminar todas as sessões</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  function toggleTheme(fromSwitch) {
+    const html = document.documentElement;
+    const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+    html.dataset.theme = next;
+    document.getElementById('themeBtn').textContent = next === 'dark' ? 'Modo claro' : 'Modo escuro';
+    const sw = document.getElementById('darkSwitch');
+    sw.classList.toggle('on', next === 'dark');
+    sw.setAttribute('aria-checked', next === 'dark');
+  }
+</script>
+</body>
+</html>

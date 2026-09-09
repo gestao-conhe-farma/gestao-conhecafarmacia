@@ -20,9 +20,9 @@ export default function ListaAprovacoes({ pendentes }) {
   }
 
   return (
-    <ul className="divide-y divide-brand-divider/60">
+    <ul className="border-t border-brand-divider">
       {pendentes.map((s) => (
-        <li key={s.id} className="py-5">
+        <li key={s.id} className="py-5 border-b border-brand-divider">
           <div className="flex items-start gap-4">
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-brand-deep">{s.titulo}</p>

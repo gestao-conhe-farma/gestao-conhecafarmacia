@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Página G — Detalhe da Atividade · Executive Monolith</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-primary: #00493a; --brand-accent: #0a844f; --brand-deep: #14231d;
+    --bg: #f7f6f2; --bg-alt: #efede7; --card: #fcfbf9; --divider: #e3e1da;
+    --sidebar: #003528; --sidebar-text: rgba(255,255,255,0.62);
+    --ink: #14231d; --muted: rgba(20,35,29,0.58); --shadow: 0 4px 20px rgba(0,42,50,0.05);
+  }
+  html[data-theme="dark"] {
+    --brand-primary: #0f7a5c; --brand-accent: #10b981; --brand-deep: #e6ebe8;
+    --bg: #0c1210; --bg-alt: #101815; --card: #131c18; --divider: #22302a;
+    --sidebar: #0a0f0d; --sidebar-text: rgba(230,235,232,0.55);
+    --ink: #f2f6f4; --muted: rgba(230,235,232,0.58); --shadow: 0 4px 24px rgba(0,0,0,0.35);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+  body { font-family:'Inter',ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--ink); display:grid; grid-template-columns:248px 1fr; min-height:100dvh; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { letter-spacing:-0.025em; }
+  button { font-family:inherit; cursor:pointer; }
+  :focus-visible { outline:2px solid var(--brand-accent); outline-offset:2px; border-radius:6px; }
+
+  aside { background:var(--sidebar); color:var(--sidebar-text); padding:28px 20px; display:flex; flex-direction:column; gap:6px; position:sticky; top:0; height:100dvh; }
+  .logo { color:#fff; font-weight:800; font-size:15px; margin-bottom:6px; padding-left:12px; display:flex; align-items:center; gap:10px; }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:500; color:var(--sidebar-text); text-decoration:none; border-left:2px solid transparent; }
+  .nav-item .num { font-size:10px; font-weight:700; opacity:0.5; letter-spacing:0.08em; width:20px; font-variant-numeric:tabular-nums; }
+  .nav-item:hover { color:#fff; background:rgba(255,255,255,0.05); }
+  .nav-item.active { color:#fff; border-left-color:var(--brand-accent); background:rgba(255,255,255,0.04); font-weight:600; }
+  .sidebar-foot { margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.09); display:flex; align-items:center; gap:10px; font-size:12.5px; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.1); color:#fff; display:grid; place-items:center; font-size:11px; font-weight:700; }
+  .theme-toggle { margin-left:auto; background:transparent; border:1px solid var(--divider); color:var(--ink); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; }
+  .theme-toggle:hover { border-color:var(--brand-accent); }
+
+  .page { padding:40px 48px; max-width:1000px; }
+  .back { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); text-decoration:none; margin-bottom:22px; }
+  .back:hover { color:var(--brand-primary); }
+
+  /* ---- Cabeçalho: editorial com régua, sem cartão ---- */
+  .act-head { padding-bottom:24px; border-bottom:2px solid var(--ink); margin-bottom:30px; }
+  html[data-theme="dark"] .act-head { border-bottom-color:var(--divider); }
+  .badges { display:flex; gap:8px; margin-bottom:14px; }
+  .badge { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:5px 11px; border-radius:99px; }
+  .b-entrevista { background:rgba(249,115,22,0.12); color:#ea580c; }
+  .b-status { background:rgba(245,158,11,0.12); color:#b45309; }
+  html[data-theme="dark"] .b-entrevista { color:#fb923c; }
+  html[data-theme="dark"] .b-status { color:#fbbf24; }
+  .act-head h1 { font-size:36px; font-weight:800; line-height:1.15; max-width:640px; }
+  .act-head .desc { color:var(--muted); margin-top:12px; line-height:1.65; max-width:640px; font-size:15px; }
+  .meta-strip { display:flex; flex-wrap:wrap; gap:10px 36px; margin-top:22px; }
+  .meta-item { font-size:13px; color:var(--muted); }
+  .meta-item strong { color:var(--ink); font-weight:600; }
+  .meta-item .mi-label { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; display:block; margin-bottom:4px; color:var(--brand-accent); }
+
+  /* ---- Secções numeradas ---- */
+  .sec { display:grid; grid-template-columns:56px 1fr; gap:18px; padding:26px 0; border-top:1px solid var(--divider); }
+  .sec-num { font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--muted); padding-top:5px; font-variant-numeric:tabular-nums; }
+  .sec-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .sec-head h2 { font-size:18px; font-weight:700; }
+  .progress { font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .progress strong { color:var(--ink); }
+
+  /* Subtarefas: linhas editoriais com dot de estado */
+  .task-row { display:flex; align-items:center; gap:14px; padding:13px 4px; border-bottom:1px solid var(--divider); }
+  .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .dot-ok { background:var(--brand-accent); box-shadow:0 0 0 3px rgba(10,132,79,0.15); }
+  .dot-pend { background:transparent; border:2px solid var(--divider); }
+  .task-title { font-size:14px; font-weight:500; flex:1; }
+  .task-title.done { color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(20,35,29,0.3); }
+  .task-who { font-size:12px; color:var(--muted); }
+  .mini-btn { font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; border:1px solid var(--divider); background:transparent; color:var(--ink); }
+  .mini-btn:hover { border-color:var(--brand-accent); color:var(--brand-accent); }
+  .mini-btn.ok { background:var(--brand-primary); border-color:var(--brand-primary); color:#fff; }
+  .mini-btn.ok:hover { background:var(--brand-accent); border-color:var(--brand-accent); }
+
+  /* Entrevista: participantes em linhas + presença */
+  .part-row { display:flex; align-items:center; gap:14px; padding:12px 4px; border-bottom:1px solid var(--divider); }
+  .p-avatar { width:34px; height:34px; border-radius:50%; background:var(--bg-alt); border:1px solid var(--divider); color:var(--ink); display:grid; place-items:center; font-size:11px; font-weight:700; }
+  .p-name { font-size:14px; font-weight:600; flex:1; }
+  .p-status { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:4px 10px; border-radius:99px; }
+  .ps-conf { background:rgba(10,132,79,0.12); color:var(--brand-accent); }
+  .ps-conv { background:rgba(245,158,11,0.12); color:#b45309; }
+  html[data-theme="dark"] .ps-conv { color:#fbbf24; }
+
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:8px; font-size:13.5px; font-weight:600; border:none; }
+  .btn-primary { background:var(--brand-primary); color:#fff; }
+  .btn-primary:hover { background:var(--brand-accent); }
+  .btn-ghost { background:transparent; border:1px solid var(--divider); color:var(--ink); }
+  .btn-ghost:hover { border-color:var(--ink); }
+  .inline-form { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .inline-form input { flex:1; min-width:220px; padding:10px 13px; border-radius:8px; border:1px solid var(--divider); background:var(--card); color:var(--ink); font-family:inherit; font-size:13.5px; outline:none; }
+  .inline-form input:focus { border-color:var(--brand-accent); box-shadow:0 0 0 3px rgba(10,132,79,0.15); }
+  .inline-form input::placeholder { color:var(--muted); }
+
+  @media (max-width: 900px) {
+    body { grid-template-columns:1fr; } aside { display:none; } .page { padding:24px 20px; }
+    .sec { grid-template-columns:1fr; gap:4px; }
+    .act-head h1 { font-size:28px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body>
+  <aside>
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="#10b981" stroke-width="1.6"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Conheça Farmácia
+    </div>
+    <a class="nav-item" href="#"><span class="num">01</span> Início</a>
+    <a class="nav-item active" href="#"><span class="num">02</span> Atividades</a>
+    <a class="nav-item" href="#"><span class="num">03</span> Documentos</a>
+    <a class="nav-item" href="#"><span class="num">04</span> Entrevistas</a>
+    <a class="nav-item" href="#"><span class="num">05</span> Aprovações</a>
+    <a class="nav-item" href="#"><span class="num">06</span> Equipa</a>
+    <a class="nav-item" href="#"><span class="num">07</span> Definições</a>
+    <div class="sidebar-foot">
+      <div class="avatar">BL</div>
+      <div><div style="color:#fff;font-weight:600;">Baptista Lima</div><div style="font-size:11px;opacity:0.7;">Coordenação</div></div>
+    </div>
+  </aside>
+
+  <main class="page">
+    <a class="back" href="#">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5m0 0 6 6m-6-6 6-6"/></svg>
+      Voltar ao início
+    </a>
+
+    <!-- Cabeçalho editorial: sem cartão, régua forte -->
+    <header class="act-head">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div class="badges">
+            <span class="badge b-entrevista">Entrevista</span>
+            <span class="badge b-status">Agendada</span>
+          </div>
+          <h1>Entrevista a Rádio UnIA</h1>
+          <p class="desc">Conversa sobre o projeto Conheça Farmácia, os nossos objetivos para o ano letivo e o papel dos estudantes de farmácia na comunidade.</p>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">Modo escuro</button>
+      </div>
+
+      <div class="meta-strip">
+        <div class="meta-item"><span class="mi-label">Data</span><strong>18 Set 2026 · 14:30</strong></div>
+        <div class="meta-item"><span class="mi-label">Responsáveis</span><strong>Baptista Lima, Ana Martins</strong></div>
+        <div class="meta-item"><span class="mi-label">Criada por</span><strong>Baptista Lima</strong></div>
+      </div>
+    </header>
+
+    <!-- 01 · Subtarefas -->
+    <section class="sec">
+      <div class="sec-num">01</div>
+      <div>
+        <div class="sec-head">
+          <h2>Subtarefas</h2>
+          <span class="progress"><strong>1</strong> de <strong>3</strong> concluídas</span>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="task-row">
+            <span class="dot dot-ok"></span>
+            <span class="task-title done">Confirmar disponibilidade da rádio</span>
+            <span class="task-who">Ana Martins</span>
+            <button class="mini-btn" onclick="alert('Reabrir')">Reabrir</button>
+          </div>
+          <div class="task-row">
+            <span class="dot dot-pend"></span>
+            <span class="task-title">Preparar guião de perguntas</span>
+            <span class="task-who">João Costa</span>
+            <button class="mini-btn ok" onclick="alert('Concluir')">Concluir</button>
+          </div>
+          <div class="task-row" style="border-bottom:none;">
+            <span class="dot dot-pend"></span>
+            <span class="task-title">Levar material institucional</span>
+            <span class="task-who">Sofia Ramos</span>
+            <button class="mini-btn ok" onclick="alert('Concluir')">Concluir</button>
+          </div>
+        </div>
+        <div class="inline-form">
+          <input type="text" placeholder="Nova subtarefa — passa por aprovação se fores membro">
+          <button class="btn btn-primary">Adicionar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 · Participantes da entrevista -->
+    <section class="sec">
+      <div class="sec-num">02</div>
+      <div>
+        <div class="sec-head">
+          <h2>Participantes da entrevista</h2>
+          <span class="progress"><strong>1</strong> de <strong>3</strong> confirmaram presença</span>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="part-row">
+            <div class="p-avatar">BL</div>
+            <span class="p-name">Baptista Lima</span>
+            <span class="p-status ps-conf">Confirmado</span>
+          </div>
+          <div class="part-row">
+            <div class="p-avatar">AM</div>
+            <span class="p-name">Ana Martins</span>
+            <span class="p-status ps-conv">Convidado</span>
+          </div>
+          <div class="part-row" style="border-bottom:none;">
+            <div class="p-avatar">JC</div>
+            <span class="p-name">João Costa</span>
+            <span class="p-status ps-conv">Convidado</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 · Ações -->
+    <section class="sec">
+      <div class="sec-num">03</div>
+      <div>
+        <div class="sec-head">
+          <h2>Ações</h2>
+        </div>
+        <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-primary">Confirmar a minha presença</button>
+          <button class="btn btn-ghost">Convidar participante</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+    html.dataset.theme = next;
+    document.getElementById('themeBtn').textContent = next === 'dark' ? 'Modo claro' : 'Modo escuro';
+  }
+</script>
+</body>
+</html>

@@ -10,10 +10,10 @@ import {
 } from '../subtarefas-actions'
 
 const ROTULOS = {
-  pendente_aprovacao: { label: 'Pendente', cls: 'badge-status-pendente' },
-  aprovada: { label: 'Aprovada', cls: 'badge-status-aprovada' },
-  rejeitada: { label: 'Rejeitada', cls: 'badge-status-rejeitada' },
-  concluida: { label: 'Concluída', cls: 'badge-status-concluida' },
+  pendente_aprovacao: { label: 'Pendente', cls: 'badge-status-pendente', dot: 'bg-amber-500' },
+  aprovada: { label: 'Aprovada', cls: 'badge-status-aprovada', dot: 'bg-brand-accent' },
+  rejeitada: { label: 'Rejeitada', cls: 'badge-status-rejeitada', dot: 'bg-red-500' },
+  concluida: { label: 'Concluída', cls: 'badge-status-concluida', dot: 'bg-brand-primary' },
 }
 
 export default function ListaSubtarefas({ subtarefas, ehSuper, pessoaAtualId }) {
@@ -32,14 +32,14 @@ export default function ListaSubtarefas({ subtarefas, ehSuper, pessoaAtualId }) 
 
   if (subtarefas.length === 0) {
     return (
-      <p className="text-sm text-brand-deep/50 py-6 text-center">
+      <p className="text-sm text-brand-deep/50 py-2">
         Ainda sem subtarefas. Cria a primeira abaixo.
       </p>
     )
   }
 
   return (
-    <ul className="divide-y divide-brand-divider/60">
+    <ul className="border-t border-brand-divider">
       {subtarefas.map((s) => {
         const responsaveis = s.subtarefa_responsaveis?.map((r) => r.pessoas?.nome) ?? []
         const possoConcluir =
@@ -49,8 +49,10 @@ export default function ListaSubtarefas({ subtarefas, ehSuper, pessoaAtualId }) 
         const info = ROTULOS[s.status]
 
         return (
-          <li key={s.id} className="py-4">
+          <li key={s.id} className="py-4 border-b border-brand-divider">
             <div className="flex items-start gap-3">
+              {/* Dot de estado */}
+              <span className={`w-2 h-2 rounded-full mt-2 shrink-0 ${info.dot}`} aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className={`font-semibold text-brand-deep ${s.status === 'concluida' ? 'line-through opacity-60' : ''}`}>

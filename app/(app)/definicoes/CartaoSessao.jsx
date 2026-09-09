@@ -24,22 +24,22 @@ export default function CartaoSessao() {
   }
 
   return (
-    <div className="card p-6 md:p-8">
-      <div className="flex items-center gap-3 mb-2">
-        <span className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary grid place-items-center">
-          <LogOut size={20} />
-        </span>
-        <h2 className="font-display text-xl font-bold text-brand-deep">Sessão</h2>
-      </div>
-      <p className="text-sm text-brand-deep/55 mb-6">
+    <div>
+      <p className="text-sm text-brand-deep/55 mb-5 max-w-md leading-relaxed">
         Podes terminar a sessão em todos os dispositivos de uma vez — útil se
         suspeitares que alguém acedeu à tua conta.
       </p>
 
-      <button onClick={terminar} disabled={aProcessar} className="btn btn-danger w-full">
-        {aProcessar ? <Loader2 className="animate-spin" size={17} /> : <LogOut size={17} />}
-        {aProcessar ? 'A terminar…' : 'Terminar todas as sessões'}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <a href="/api/auth/logout" className="btn btn-secondary">
+          <LogOut size={16} />
+          Terminar sessão aqui
+        </a>
+        <button onClick={terminar} disabled={aProcessar} className="btn btn-danger">
+          {aProcessar ? <Loader2 className="animate-spin" size={17} /> : <LogOut size={17} />}
+          {aProcessar ? 'A terminar…' : 'Terminar todas as sessões'}
+        </button>
+      </div>
     </div>
   )
 }

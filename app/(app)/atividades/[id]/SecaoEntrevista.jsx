@@ -11,6 +11,7 @@ export default function SecaoEntrevista({
   ehSuper,
   meuConvite,
   equipa,
+  num = '01',
 }) {
   const router = useRouter()
   const [aProcessar, setAProcessar] = useState(false)
@@ -44,38 +45,47 @@ export default function SecaoEntrevista({
   }
 
   return (
-    <div className="card p-6 md:p-8 mb-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="font-display text-xl font-bold text-brand-deep">
-          Participantes da entrevista
-        </h2>
-        <div className="flex items-center gap-2">
-          {meuConvite?.status === 'convidado' && (
-            <button onClick={confirmar} disabled={aProcessar} className="btn btn-accent btn-small">
-              {aProcessar ? <Loader2 className="animate-spin" size={15} /> : <CalendarCheck size={15} />}
-              Confirmar a minha presença
-            </button>
-          )}
-          {meuConvite?.status === 'confirmado' && (
-            <span className="badge badge-status-confirmado">
-              <Check size={12} /> Presença confirmada
-            </span>
-          )}
-          {ehSuper && (
-            <button
-              onClick={() => setModoConvidar((v) => !v)}
-              className="btn btn-secondary btn-small"
-            >
-              <UserPlus size={15} />
-              Convidar
-            </button>
-          )}
+    <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+      <span className="sec-num">{num}</span>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">
+            Participantes da entrevista
+          </h2>
+          <div className="flex items-center gap-2">
+            {meuConvite?.status === 'convidado' && (
+              <button onClick={confirmar} disabled={aProcessar} className="btn btn-accent btn-small">
+                {aProcessar ? <Loader2 className="animate-spin" size={15} /> : <CalendarCheck size={15} />}
+                Confirmar a minha presença
+              </button>
+            )}
+            {meuConvite?.status === 'confirmado' && (
+              <span className="badge badge-status-confirmado">
+                <Check size={12} /> Presença confirmada
+              </span>
+            )}
+            {ehSuper && (
+              <button
+                onClick={() => setModoConvidar((v) => !v)}
+                className="btn btn-secondary btn-small"
+              >
+                <UserPlus size={15} />
+                Convidar
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+
+        {confirmadas > 0 && (
+          <p className="text-sm text-brand-deep/45 mt-1.5 tabular-nums">
+            <strong className="text-brand-deep">{confirmadas}</strong> de{' '}
+            <strong className="text-brand-deep">{participantes.length}</strong> confirmaram presença
+          </p>
+        )}
 
       {/* Convidar mais pessoas */}
       {modoConvidar && (
-        <div className="mb-5 p-4 rounded-xl bg-brand-bg-alt border border-brand-divider/60">
+        <div className="mt-5 p-4 rounded-xl panel">
           <p className="text-sm font-semibold text-brand-deep mb-2">
             Seleciona quem convidar:
           </p>
@@ -92,10 +102,10 @@ export default function SecaoEntrevista({
                     atual.includes(p.id) ? atual.filter((x) => x !== p.id) : [...atual, p.id]
                   )
                 }
-                className={`px-3 py-1.5 rounded-full text-sm border-2 transition-all ${
+                className={`chip-btn ${
                   selecionadas.includes(p.id)
-                    ? 'border-[#ff6c23] bg-[#ff6c23]/10 text-[#ff6c23] font-semibold'
-                    : 'border-brand-divider text-brand-deep/60'
+                    ? 'chip-btn-on'
+                    : 'chip-btn-off'
                 }`}
               >
                 {p.nome}
@@ -114,17 +124,17 @@ export default function SecaoEntrevista({
       )}
 
       {participantes.length === 0 ? (
-        <p className="text-sm text-brand-deep/50 py-4 text-center">
+        <p className="text-sm text-brand-deep/50 py-4">
           Ainda sem participantes convidados.
         </p>
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ul className="mt-5 border-t border-brand-divider">
           {participantes.map((p) => (
             <li
               key={p.pessoa_id}
-              className="flex items-center gap-3 p-3 rounded-xl border border-brand-divider/60"
+              className="flex items-center gap-3 py-3 border-b border-brand-divider"
             >
-              <span className="w-9 h-9 rounded-full bg-brand-primary/10 text-brand-primary grid place-items-center font-bold text-sm shrink-0">
+              <span className="w-9 h-9 rounded-full bg-brand-bg-alt border border-brand-divider text-brand-deep grid place-items-center font-bold text-[11px] shrink-0">
                 {iniciais(p.pessoas?.nome ?? '?')}
               </span>
               <div className="min-w-0 flex-1">
@@ -140,7 +150,8 @@ export default function SecaoEntrevista({
           ))}
         </ul>
       )}
-    </div>
+      </div>
+    </section>
   )
 }
 
