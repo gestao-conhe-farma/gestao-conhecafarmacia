@@ -2,13 +2,25 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck } from 'lucide-react'
+
+// Chaves de texto → componentes (ícones não podem atravessar a fronteira
+// Server → Client Components, por isso o layout envia apenas a chave).
+const ICONES = {
+  inicio: LayoutDashboard,
+  atividades: ClipboardList,
+  aprovacoes: CheckCircle2,
+  entrevistas: CalendarCheck,
+  equipa: Users,
+}
 
 export default function NavLateral({ items }) {
   const pathname = usePathname()
 
   return (
     <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-      {items.map(({ href, label, icon: Icon, badge }) => {
+      {items.map(({ href, label, icon, badge }) => {
+        const Icone = ICONES[icon] ?? ClipboardList
         const ativo = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
@@ -20,7 +32,7 @@ export default function NavLateral({ items }) {
                 : 'text-brand-deep/70 hover:bg-brand-primary/5 hover:text-brand-deep'
             }`}
           >
-            <Icon size={18} className="shrink-0" />
+            <Icone size={18} className="shrink-0" />
             <span className="flex-1">{label}</span>
             {badge > 0 && (
               <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[11px] font-bold">

@@ -4,8 +4,18 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LogOut, Menu, Moon, Plus, Sun, X } from 'lucide-react'
+import { LogOut, Menu, Moon, Plus, Sun, X, LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
+
+// Chaves de texto → componentes (ícones não atravessam a fronteira
+// Server → Client Components).
+const ICONES = {
+  inicio: LayoutDashboard,
+  atividades: ClipboardList,
+  aprovacoes: CheckCircle2,
+  entrevistas: CalendarCheck,
+  equipa: Users,
+}
 
 /**
  * Drawer de navegação mobile (estilo do site público): hamburger na topbar,
@@ -117,7 +127,8 @@ export default function DrawerMobile({ items, pessoa }) {
 
               {/* Navegação */}
               <nav className="flex-1 px-3 py-4 space-y-1">
-                {items.map(({ href, label, icon: Icon, badge }) => {
+                {items.map(({ href, label, icon, badge }) => {
+                  const Icone = ICONES[icon] ?? ClipboardList
                   const ativo = href === '/' ? pathname === '/' : pathname.startsWith(href)
                   return (
                     <Link
@@ -129,7 +140,7 @@ export default function DrawerMobile({ items, pessoa }) {
                           : 'text-brand-deep/75 hover:bg-brand-primary/5 hover:text-brand-deep'
                       }`}
                     >
-                      <Icon size={19} className="shrink-0" />
+                      <Icone size={19} className="shrink-0" />
                       <span className="flex-1">{label}</span>
                       {badge > 0 && (
                         <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[11px] font-bold">

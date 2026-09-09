@@ -1,17 +1,7 @@
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import {
-  LayoutDashboard,
-  ClipboardList,
-  CheckCircle2,
-  Users,
-  CalendarCheck,
-  Plus,
-  Moon,
-  Sun,
-  LogOut,
-} from 'lucide-react'
+import { Plus } from 'lucide-react'
 import NavLateral from './NavLateral'
 import DrawerMobile from './DrawerMobile'
 import BotaoTema from './BotaoTema'
@@ -44,13 +34,13 @@ export default async function AppLayout({ children }) {
   const nConvites = convites?.count ?? 0
 
   const items = [
-    { href: '/', label: 'Início', icon: LayoutDashboard },
-    { href: '/atividades', label: 'Atividades', icon: ClipboardList },
+    { href: '/', label: 'Início', icon: 'inicio' },
+    { href: '/atividades', label: 'Atividades', icon: 'atividades' },
     ...(pessoa.role === 'super_admin'
-      ? [{ href: '/aprovacoes', label: 'Aprovações', icon: CheckCircle2, badge: nPendentes }]
+      ? [{ href: '/aprovacoes', label: 'Aprovações', icon: 'aprovacoes', badge: nPendentes }]
       : []),
-    { href: '/entrevistas', label: 'As minhas entrevistas', icon: CalendarCheck, badge: nConvites },
-    { href: '/equipa', label: 'Equipa', icon: Users, soSuper: true },
+    { href: '/entrevistas', label: 'As minhas entrevistas', icon: 'entrevistas', badge: nConvites },
+    { href: '/equipa', label: 'Equipa', icon: 'equipa', soSuper: true },
   ].filter((i) => !i.soSuper || pessoa.role === 'super_admin')
 
   return (
