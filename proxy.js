@@ -41,6 +41,13 @@ export async function proxy(request) {
   const rotasPublicas = ['/login', '/setup']
   const isPublic = rotasPublicas.some((r) => pathname === r || pathname.startsWith(r + '/'))
 
+  // Rotas de API: apenas renovar a sessão e seguir — NUNCA redirecionar.
+  // (Os route handlers fazem a sua própria validação; um redirect 307 aqui
+  // partia o fetch do login e produzia o erro genérico "Erro de rede".)
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse
+  }
+
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
