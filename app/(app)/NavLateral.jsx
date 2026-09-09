@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings } from 'lucide-react'
 
 // Chaves de texto → componentes (ícones não podem atravessar a fronteira
 // Server → Client Components, por isso o layout envia apenas a chave).
@@ -12,6 +12,7 @@ const ICONES = {
   aprovacoes: CheckCircle2,
   entrevistas: CalendarCheck,
   equipa: Users,
+  definicoes: Settings,
 }
 
 export default function NavLateral({ items }) {

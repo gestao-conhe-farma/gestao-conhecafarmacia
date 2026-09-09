@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LogOut, Menu, Moon, Plus, Sun, X, LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck } from 'lucide-react'
+import { LogOut, Menu, Moon, Plus, Sun, X, LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
 
 // Chaves de texto → componentes (ícones não atravessam a fronteira
@@ -15,6 +15,7 @@ const ICONES = {
   aprovacoes: CheckCircle2,
   entrevistas: CalendarCheck,
   equipa: Users,
+  definicoes: Settings,
 }
 
 /**

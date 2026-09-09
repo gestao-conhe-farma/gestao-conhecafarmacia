@@ -1,7 +1,7 @@
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Settings } from 'lucide-react'
 import NavLateral from './NavLateral'
 import DrawerMobile from './DrawerMobile'
 import BotaoTema from './BotaoTema'
@@ -41,6 +41,7 @@ export default async function AppLayout({ children }) {
       : []),
     { href: '/entrevistas', label: 'As minhas entrevistas', icon: 'entrevistas', badge: nConvites },
     { href: '/equipa', label: 'Equipa', icon: 'equipa', soSuper: true },
+    { href: '/definicoes', label: 'Definições', icon: 'definicoes' },
   ].filter((i) => !i.soSuper || pessoa.role === 'super_admin')
 
   return (
