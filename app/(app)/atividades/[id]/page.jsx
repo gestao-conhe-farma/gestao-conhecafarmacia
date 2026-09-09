@@ -11,6 +11,7 @@ import {
   formatarData,
 } from '@/lib/dados'
 import ListaSubtarefas from './ListaSubtarefas'
+import FormSubtarefaInline from './FormSubtarefaInline'
 import SecaoEntrevista from './SecaoEntrevista'
 import PainelEvento from './PainelEvento'
 
