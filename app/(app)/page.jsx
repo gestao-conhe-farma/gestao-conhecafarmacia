@@ -50,7 +50,7 @@ export default async function PaginaInicio({ searchParams }) {
             Conheça Farmácia · Gestão
           </p>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-brand-deep mt-1">
-            Olá, {pessoa.nome.split(' ')[0]} 👋
+            Olá, {pessoa.nome.split(' ')[0]}
           </h1>
           <p className="text-brand-deep/60 mt-1">
             {pessoa.role === 'super_admin'
@@ -165,7 +165,7 @@ export default async function PaginaInicio({ searchParams }) {
           </h3>
           {emAtraso.length === 0 ? (
             <p className="text-sm text-brand-deep/50 py-6 text-center">
-              Nada em atraso. Bom trabalho! 🎉
+              Nada em atraso. Bom trabalho!
             </p>
           ) : (
             <ul className="space-y-3">

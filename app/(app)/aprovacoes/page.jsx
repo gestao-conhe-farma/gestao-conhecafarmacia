@@ -23,7 +23,7 @@ export default async function PaginaAprovacoes() {
       <div className="card p-6 md:p-8">
         {pendentes.length === 0 ? (
           <p className="text-sm text-brand-deep/50 py-8 text-center">
-            Tudo em ordem — sem subtarefas pendentes. ✅
+            Tudo em ordem — sem subtarefas pendentes.
           </p>
         ) : (
           <ListaAprovacoes pendentes={pendentes} />
