@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen } from 'lucide-react'
 
 // Chaves de texto → componentes (ícones não podem atravessar a fronteira
 // Server → Client Components, por isso o layout envia apenas a chave).
@@ -11,6 +11,7 @@ const ICONES = {
   atividades: ClipboardList,
   aprovacoes: CheckCircle2,
   entrevistas: CalendarCheck,
+  documentos: FolderOpen,
   equipa: Users,
   definicoes: Settings,
 }
