@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
 const ABAS = [
   { valor: 'todas', label: 'Todas' },
@@ -11,6 +11,7 @@ const ABAS = [
 
 export default function AbasTipo({ atual }) {
   const router = useRouter()
+  const pathname = usePathname()
   const params = useSearchParams()
 
   function escolher(valor) {
@@ -21,14 +22,16 @@ export default function AbasTipo({ atual }) {
       p.set('tipo', valor)
     }
     const qs = p.toString()
-    router.push(qs ? `/?${qs}` : '/')
+    router.push(qs ? `${pathname}?${qs}` : pathname)
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filtrar por tipo">
       {ABAS.map(({ valor, label }) => (
         <button
           key={valor}
+          role="tab"
+          aria-selected={atual === valor}
           onClick={() => escolher(valor)}
           className={`filter-btn ${atual === valor ? 'active' : ''}`}
         >

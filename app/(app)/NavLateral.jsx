@@ -2,7 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen } from 'lucide-react'
+import {
+  LayoutDashboard,
+  ClipboardList,
+  CheckCircle2,
+  Users,
+  CalendarCheck,
+  Settings,
+  FolderOpen,
+} from 'lucide-react'
 
 // Chaves de texto → componentes (ícones não podem atravessar a fronteira
 // Server → Client Components, por isso o layout envia apenas a chave).
@@ -20,24 +28,26 @@ export default function NavLateral({ items }) {
   const pathname = usePathname()
 
   return (
-    <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-      {items.map(({ href, label, icon, badge }) => {
+    <nav className="flex-1 px-3 py-1 space-y-0.5 overflow-y-auto" aria-label="Navegação principal">
+      {items.map(({ href, label, icon, badge, num }) => {
         const Icone = ICONES[icon] ?? ClipboardList
         const ativo = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
             key={href}
             href={href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+            aria-current={ativo ? 'page' : undefined}
+            className={`flex items-center gap-3 px-3 py-2.5 text-[13.5px] border-l-2 transition-colors rounded-r-lg ${
               ativo
-                ? 'bg-brand-primary/10 text-brand-primary'
-                : 'text-brand-deep/70 hover:bg-brand-primary/5 hover:text-brand-deep'
+                ? 'bg-white/[0.07] border-brand-accent text-white font-semibold'
+                : 'border-transparent text-white/60 hover:bg-white/[0.04] hover:text-white'
             }`}
           >
-            <Icone size={18} className="shrink-0" />
-            <span className="flex-1">{label}</span>
+            <span className="text-[10px] font-bold w-5 text-white/30 tabular-nums">{num}</span>
+            <Icone size={16} className="shrink-0" />
+            <span className="flex-1 truncate">{label}</span>
             {badge > 0 && (
-              <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[11px] font-bold">
+              <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[10.5px] font-bold">
                 {badge}
               </span>
             )}

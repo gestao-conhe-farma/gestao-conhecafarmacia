@@ -1,7 +1,7 @@
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Settings, FolderOpen } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import NavLateral from './NavLateral'
 import DrawerMobile from './DrawerMobile'
 import BotaoTema from './BotaoTema'
@@ -43,38 +43,41 @@ export default async function AppLayout({ children }) {
     { href: '/documentos', label: 'Documentos', icon: 'documentos' },
     { href: '/equipa', label: 'Equipa', icon: 'equipa', soSuper: true },
     { href: '/definicoes', label: 'Definições', icon: 'definicoes' },
-  ].filter((i) => !i.soSuper || pessoa.role === 'super_admin')
+  ]
+    .filter((i) => !i.soSuper || pessoa.role === 'super_admin')
+    // Numeração estrutural da direção A (01, 02, …)
+    .map((i, idx) => ({ ...i, num: String(idx + 1).padStart(2, '0') }))
 
   return (
     <div className="min-h-dvh bg-brand-bg-alt flex">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-brand-bg border-r border-brand-divider/60 sticky top-0 h-dvh">
-        <div className="p-6">
-          <Link href="/" className="block">
+      {/* Sidebar estrutural — sempre escura, nos dois temas */}
+      <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-sidebar sticky top-0 h-dvh">
+        <div className="px-6 pt-7 pb-6">
+          <Link href="/" className="block" aria-label="Início">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo/logo-principal-verde.svg" alt="Conheça Farmácia" className="h-10" />
+            <img src="/logo/logo-principal-branco.svg" alt="Conheça Farmácia" className="h-8" />
           </Link>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">
+          <p className="mt-2.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/45">
             Gestão Interna
           </p>
         </div>
 
         <NavLateral items={items} />
 
-        <div className="p-4 mt-auto border-t border-brand-divider/60">
+        <div className="px-4 pb-5 mt-auto">
           {pessoa.role === 'super_admin' && (
-            <Link href="/atividades/nova" className="btn btn-primary w-full mb-3">
+            <Link href="/atividades/nova" className="btn btn-accent w-full mb-4">
               <Plus size={16} />
               Nova atividade
             </Link>
           )}
-          <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-full bg-brand-primary text-white grid place-items-center font-bold text-sm shrink-0">
+          <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+            <span className="w-9 h-9 rounded-full bg-white/10 text-white grid place-items-center font-bold text-xs shrink-0">
               {iniciais(pessoa.nome)}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-brand-deep truncate">{pessoa.nome}</p>
-              <p className="text-xs text-brand-deep/50 truncate">
+              <p className="text-[13px] font-semibold text-white truncate">{pessoa.nome}</p>
+              <p className="text-[11px] text-white/45 truncate">
                 {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
               </p>
             </div>
@@ -86,22 +89,23 @@ export default async function AppLayout({ children }) {
       {/* Conteúdo */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar mobile */}
-        <header className="lg:hidden sticky top-0 z-40 bg-brand-bg border-b border-brand-divider/60 pl-2 pr-4 h-16 flex items-center gap-2">
+        <header className="lg:hidden sticky top-0 z-40 bg-sidebar border-b border-white/10 pl-2 pr-4 h-16 flex items-center gap-2">
           <DrawerMobile items={items} pessoa={pessoa} />
-          <Link href="/" className="flex items-center flex-1 justify-center">
+          <Link href="/" className="flex items-center flex-1 justify-center" aria-label="Início">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo/logo-principal-verde.svg" alt="Conheça Farmácia" className="h-8" />
+            <img src="/logo/logo-principal-branco.svg" alt="Conheça Farmácia" className="h-7" />
           </Link>
-          <div className="flex items-center gap-1 w-18 justify-end">
+          <div className="flex items-center gap-1">
             <BotaoTema />
             <BotaoSair />
           </div>
         </header>
 
-        <main className="flex-1 py-8 px-4 md:px-8">{children}</main>
+        <main className="flex-1 py-8 md:py-10 px-5 md:px-10">{children}</main>
 
-        <footer className="px-8 py-4 text-xs text-brand-deep/40">
-          Conheça Farmácia · Plataforma de gestão interna
+        <footer className="px-6 md:px-10 py-5 text-[11.5px] text-brand-deep/40 flex items-center justify-between border-t border-brand-divider/60">
+          <span>Conheça Farmácia · Plataforma de gestão interna</span>
+          <span className="hidden sm:inline">Acesso restrito à equipa</span>
         </footer>
       </div>
     </div>

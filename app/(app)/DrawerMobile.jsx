@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LogOut, Menu, Moon, Plus, Sun, X, LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen } from 'lucide-react'
+import {
+  LogOut, Menu, Moon, Plus, Sun, X,
+  LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen,
+} from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
 
 // Chaves de texto → componentes (ícones não atravessam a fronteira
@@ -20,31 +23,60 @@ const ICONES = {
 }
 
 /**
- * Drawer de navegação mobile (estilo do site público): hamburger na topbar,
- * overlay + painel deslizante da direita, fecha ao navegar, com Esc ou no overlay.
+ * Drawer de navegação mobile: painel estrutural escuro (direção A),
+ * overlay + slide com mola, fecha ao navegar, com Esc ou no overlay.
+ * Focus preso dentro do painel enquanto aberto.
  */
 export default function DrawerMobile({ items, pessoa }) {
   const [aberto, setAberto] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const { tema, alternarTema } = useTema()
+  const painelRef = useRef(null)
+  const botaoRef = useRef(null)
 
   // Fecha automaticamente ao mudar de rota
   useEffect(() => {
     setAberto(false)
   }, [pathname])
 
-  // Bloqueia o scroll do body enquanto aberto + tecla Esc
+  // Scroll lock + Esc + focus trap + devolver foco ao fechar
   useEffect(() => {
-    document.body.style.overflow = aberto ? 'hidden' : ''
     if (!aberto) return
+
+    document.body.style.overflow = 'hidden'
+
     const onKey = (e) => {
-      if (e.key === 'Escape') setAberto(false)
+      if (e.key === 'Escape') {
+        setAberto(false)
+        return
+      }
+      if (e.key === 'Tab' && painelRef.current) {
+        const focaveis = painelRef.current.querySelectorAll(
+          'a[href], button:not([disabled])'
+        )
+        if (!focaveis.length) return
+        const primeiro = focaveis[0]
+        const ultimo = focaveis[focaveis.length - 1]
+        if (e.shiftKey && document.activeElement === primeiro) {
+          e.preventDefault()
+          ultimo.focus()
+        } else if (!e.shiftKey && document.activeElement === ultimo) {
+          e.preventDefault()
+          primeiro.focus()
+        }
+      }
     }
     window.addEventListener('keydown', onKey)
+
+    // Foco inicial no painel
+    painelRef.current?.focus()
+
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
+      // Devolve o foco ao hamburger
+      botaoRef.current?.focus()
     }
   }, [aberto])
 
@@ -58,10 +90,12 @@ export default function DrawerMobile({ items, pessoa }) {
     <>
       {/* Hamburger (só mobile) */}
       <button
+        ref={botaoRef}
         onClick={() => setAberto(true)}
         aria-label="Abrir menu"
         aria-expanded={aberto}
-        className="lg:hidden w-9 h-9 grid place-items-center rounded-lg text-brand-deep/70 hover:bg-brand-primary/10 hover:text-brand-primary transition-colors"
+        aria-controls="menu-principal-mobile"
+        className="lg:hidden w-10 h-10 grid place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
       >
         <Menu size={20} />
       </button>
@@ -77,75 +111,79 @@ export default function DrawerMobile({ items, pessoa }) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={() => setAberto(false)}
-              className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]"
+              className="lg:hidden fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px]"
+              aria-hidden="true"
             />
 
-            {/* Painel */}
+            {/* Painel escuro estrutural */}
             <motion.aside
               key="drawer"
+              ref={painelRef}
+              tabIndex={-1}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-              className="lg:hidden fixed top-0 right-0 z-50 h-dvh w-[82%] max-w-sm flex flex-col
-                bg-gradient-to-b from-brand-bg-alt to-brand-bg
-                shadow-[-8px_0_30px_rgba(0,42,50,0.15)]
-                overscroll-contain overflow-y-auto"
+              className="lg:hidden fixed top-0 right-0 z-50 h-dvh w-[84%] max-w-sm flex flex-col
+                bg-sidebar outline-none overflow-y-auto overscroll-contain"
               role="dialog"
               aria-modal="true"
               aria-label="Menu de navegação"
+              id="menu-principal-mobile"
             >
               {/* Cabeçalho */}
               <div className="flex items-center justify-between px-5 pt-5">
                 <Link href="/" aria-label="Início">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/logo/logo-principal-verde.svg"
+                    src="/logo/logo-principal-branco.svg"
                     alt="Conheça Farmácia"
-                    className="h-9"
+                    className="h-8"
                   />
                 </Link>
                 <button
                   onClick={() => setAberto(false)}
                   aria-label="Fechar menu"
-                  className="w-9 h-9 grid place-items-center rounded-full text-brand-deep/60 hover:bg-brand-primary/10 transition-colors"
+                  className="w-9 h-9 grid place-items-center rounded-full text-white/60 hover:bg-white/10 hover:text-white transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <p className="px-5 mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">
+              <p className="px-5 mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
                 Gestão Interna
               </p>
 
               {/* Ação principal */}
               {pessoa.role === 'super_admin' && (
                 <div className="px-5 mt-5">
-                  <Link href="/atividades/nova" className="btn btn-primary w-full">
+                  <Link href="/atividades/nova" className="btn btn-accent w-full">
                     <Plus size={16} />
                     Nova atividade
                   </Link>
                 </div>
               )}
 
-              {/* Navegação */}
-              <nav className="flex-1 px-3 py-4 space-y-1">
-                {items.map(({ href, label, icon, badge }) => {
+              {/* Navegação numerada */}
+              <nav className="flex-1 px-3 py-4 space-y-0.5" aria-label="Navegação mobile">
+                {items.map(({ href, label, icon, badge, num }) => {
                   const Icone = ICONES[icon] ?? ClipboardList
                   const ativo = href === '/' ? pathname === '/' : pathname.startsWith(href)
                   return (
                     <Link
                       key={href}
                       href={href}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-colors ${
+                      aria-current={ativo ? 'page' : undefined}
+                      className={`flex items-center gap-3 px-3 py-3 text-[14.5px] border-l-2 transition-colors rounded-r-lg ${
                         ativo
-                          ? 'bg-brand-primary/10 text-brand-primary'
-                          : 'text-brand-deep/75 hover:bg-brand-primary/5 hover:text-brand-deep'
+                          ? 'bg-white/[0.07] border-brand-accent text-white font-semibold'
+                          : 'border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white'
                       }`}
                     >
-                      <Icone size={19} className="shrink-0" />
-                      <span className="flex-1">{label}</span>
+                      <span className="text-[10px] font-bold w-5 text-white/30 tabular-nums">{num}</span>
+                      <Icone size={17} className="shrink-0" />
+                      <span className="flex-1 truncate">{label}</span>
                       {badge > 0 && (
-                        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[11px] font-bold">
+                        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[10.5px] font-bold">
                           {badge}
                         </span>
                       )}
@@ -155,32 +193,29 @@ export default function DrawerMobile({ items, pessoa }) {
               </nav>
 
               {/* Rodapé: tema + utilizador + sair */}
-              <div className="border-t border-brand-divider/60 px-5 py-4 space-y-3">
+              <div className="border-t border-white/10 px-5 py-4 space-y-2">
                 <button
                   onClick={alternarTema}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-brand-deep/75 hover:bg-brand-primary/5 transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium text-white/70 hover:bg-white/[0.05] hover:text-white transition-colors"
                 >
-                  {tema === 'escuro' ? <Sun size={18} /> : <Moon size={18} />}
+                  {tema === 'escuro' ? <Sun size={17} /> : <Moon size={17} />}
                   {tema === 'escuro' ? 'Tema claro' : 'Tema escuro'}
                 </button>
 
-                <div className="flex items-center gap-3 pt-1">
-                  <span className="w-9 h-9 rounded-full bg-brand-primary text-white grid place-items-center font-bold text-sm shrink-0">
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="w-9 h-9 rounded-full bg-white/10 text-white grid place-items-center font-bold text-xs shrink-0">
                     {iniciais(pessoa.nome)}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-brand-deep truncate">
-                      {pessoa.nome}
-                    </p>
-                    <p className="text-xs text-brand-deep/50 truncate">
+                    <p className="text-[13px] font-semibold text-white truncate">{pessoa.nome}</p>
+                    <p className="text-[11px] text-white/45 truncate">
                       {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
                     </p>
                   </div>
                   <button
                     onClick={sair}
                     aria-label="Terminar sessão"
-                    title="Terminar sessão"
-                    className="w-9 h-9 grid place-items-center rounded-lg text-brand-deep/50 hover:text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
+                    className="w-9 h-9 grid place-items-center rounded-lg text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
                   >
                     <LogOut size={17} />
                   </button>
