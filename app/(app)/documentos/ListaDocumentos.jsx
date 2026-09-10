@@ -22,19 +22,6 @@ function chipFicheiro(mime) {
   return { cls: 'file-pdf', label: 'PDF' }
 }
 
-/** Formatos com pré-visualização fiável no navegador. */
-function previewSuportado(mime, nome) {
-  const ext = (nome?.split('.').pop() || '').toLowerCase()
-  return (
-    mime === 'application/pdf' || ext === 'pdf' ||
-    mime?.startsWith('image/') ||
-    mime === 'text/html' || ['html', 'htm'].includes(ext) ||
-    mime === 'text/plain' || ext === 'txt' ||
-    ext === 'docx' ||
-    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  )
-}
-
 export default function ListaDocumentos({ documentos, ehSuper }) {
   const router = useRouter()
   const [aEliminar, setAEliminar] = useState(null)
@@ -100,16 +87,17 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
                 <Loader2 size={18} className="animate-spin text-brand-accent" />
               ) : (
                 <>
-                  {previewSuportado(doc.mime_type, doc.nome_ficheiro) && (
-                    <button
-                      onClick={() => setEmPreview(doc)}
-                      aria-label={`Pré-visualizar ${doc.titulo}`}
-                      title="Pré-visualizar"
-                      className="w-9 h-9 grid place-items-center rounded-lg border border-transparent text-brand-deep/45 hover:text-brand-primary hover:border-brand-divider transition-colors"
-                    >
-                      <Eye size={16} />
-                    </button>
-                  )}
+                  {/* O botão aparece sempre: formatos sem renderização
+                      nativa recebem um aviso honesto com download dentro
+                      do próprio modal (ver PreVisualizador). */}
+                  <button
+                    onClick={() => setEmPreview(doc)}
+                    aria-label={`Pré-visualizar ${doc.titulo}`}
+                    title="Pré-visualizar"
+                    className="w-9 h-9 grid place-items-center rounded-lg border border-transparent text-brand-deep/45 hover:text-brand-primary hover:border-brand-divider transition-colors"
+                  >
+                    <Eye size={16} />
+                  </button>
                   <a
                     href={`/documentos/${doc.id}/download`}
                     aria-label={`Descarregar ${doc.titulo}`}
