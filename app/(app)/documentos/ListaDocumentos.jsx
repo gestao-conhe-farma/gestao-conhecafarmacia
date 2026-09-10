@@ -4,16 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Download,
-  FileText,
-  FileSpreadsheet,
-  FileImage,
-  File as FileIco,
+  Eye,
   Loader2,
   Lock,
   Trash2,
 } from 'lucide-react'
 import { formatarTamanho } from '@/lib/documentos'
 import { eliminarDocumento } from './actions'
+import PreVisualizador from './PreVisualizador'
 
 function chipFicheiro(mime) {
   if (mime?.startsWith('image/')) return { cls: 'file-img', label: 'IMG' }
@@ -24,9 +22,23 @@ function chipFicheiro(mime) {
   return { cls: 'file-pdf', label: 'PDF' }
 }
 
+/** Formatos com pré-visualização fiável no navegador. */
+function previewSuportado(mime, nome) {
+  const ext = (nome?.split('.').pop() || '').toLowerCase()
+  return (
+    mime === 'application/pdf' || ext === 'pdf' ||
+    mime?.startsWith('image/') ||
+    mime === 'text/html' || ['html', 'htm'].includes(ext) ||
+    mime === 'text/plain' || ext === 'txt' ||
+    ext === 'docx' ||
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  )
+}
+
 export default function ListaDocumentos({ documentos, ehSuper }) {
   const router = useRouter()
   const [aEliminar, setAEliminar] = useState(null)
+  const [emPreview, setEmPreview] = useState(null)
 
   async function eliminar(id, titulo) {
     if (!confirm(`Eliminar “${titulo}”? O ficheiro é removido permanentemente.`)) return
@@ -41,6 +53,7 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
   }
 
   return (
+    <>
     <ul className="border-t border-brand-divider">
       {documentos.map((doc) => {
         const chip = chipFicheiro(doc.mime_type)
@@ -87,6 +100,16 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
                 <Loader2 size={18} className="animate-spin text-brand-accent" />
               ) : (
                 <>
+                  {previewSuportado(doc.mime_type, doc.nome_ficheiro) && (
+                    <button
+                      onClick={() => setEmPreview(doc)}
+                      aria-label={`Pré-visualizar ${doc.titulo}`}
+                      title="Pré-visualizar"
+                      className="w-9 h-9 grid place-items-center rounded-lg border border-transparent text-brand-deep/45 hover:text-brand-primary hover:border-brand-divider transition-colors"
+                    >
+                      <Eye size={16} />
+                    </button>
+                  )}
                   <a
                     href={`/documentos/${doc.id}/download`}
                     aria-label={`Descarregar ${doc.titulo}`}
@@ -112,5 +135,8 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
         )
       })}
     </ul>
+
+    {emPreview && <PreVisualizador doc={emPreview} fechar={() => setEmPreview(null)} />}
+    </>
   )
 }
