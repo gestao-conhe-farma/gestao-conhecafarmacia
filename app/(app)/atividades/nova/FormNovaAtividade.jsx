@@ -14,6 +14,11 @@ export default function FormNovaAtividade({ equipa, pessoaAtualId, eventos }) {
   const [responsaveis, setResponsaveis] = useState([pessoaAtualId])
   const [parent, setParent] = useState('')
   const [participantes, setParticipantes] = useState([])
+  const [localEvento, setLocalEvento] = useState('')
+  const [materiais, setMateriais] = useState('')
+  const [orcamento, setOrcamento] = useState('')
+  const [publicoAlvo, setPublicoAlvo] = useState('')
+  const [publicoEsperado, setPublicoEsperado] = useState('')
   const [aCarregar, setACarregar] = useState(false)
   const [erro, setErro] = useState(null)
 
@@ -36,6 +41,11 @@ export default function FormNovaAtividade({ equipa, pessoaAtualId, eventos }) {
         responsaveis,
         parent_id: parent || null,
         participantes: tipo === 'entrevista' ? participantes : [],
+        local: localEvento || null,
+        materiais: materiais || null,
+        orcamento: orcamento === '' ? null : orcamento,
+        publico_alvo: publicoAlvo || null,
+        publico_esperado: publicoEsperado === '' ? null : publicoEsperado,
       }
       const r = await criarAtividade(payload)
       if (!r.ok) {
@@ -122,6 +132,83 @@ export default function FormNovaAtividade({ equipa, pessoaAtualId, eventos }) {
           </select>
         </div>
       </div>
+
+      {/* Detalhes do evento/entrevista */}
+      {(tipo === 'evento' || tipo === 'entrevista') && (
+        <div className="form-group">
+          <label className="form-label" htmlFor="local-ev">Local</label>
+          <input
+            id="local-ev"
+            className="form-input"
+            placeholder="Sala, endereço ou link da videochamada"
+            value={localEvento}
+            onChange={(e) => setLocalEvento(e.target.value)}
+          />
+        </div>
+      )}
+
+      {tipo === 'evento' && (
+        <>
+          <div className="form-group">
+            <span className="form-label">
+              Materiais necessários{' '}<span className="text-brand-deep/40 font-normal">(opcional — um por linha)</span>
+            </span>
+            <textarea
+              id="materiais-ev"
+              className="form-textarea"
+              rows={3}
+              placeholder={'Ex.:\nTensiómetros × 4\nÁlcool e algodão\nCartazes A3'}
+              value={materiais}
+              onChange={(e) => setMateriais(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="form-group">
+              <label className="form-label" htmlFor="orcamento-ev">
+                Orçamento estimado <span className="text-brand-deep/40 font-normal">(MZN, opcional)</span>
+              </label>
+              <input
+                id="orcamento-ev"
+                type="number"
+                min="0"
+                step="0.01"
+                className="form-input"
+                placeholder="0,00"
+                value={orcamento}
+                onChange={(e) => setOrcamento(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="publico-esperado-ev">
+                Participantes esperados <span className="text-brand-deep/40 font-normal">(opcional)</span>
+              </label>
+              <input
+                id="publico-esperado-ev"
+                type="number"
+                min="0"
+                className="form-input"
+                placeholder="Ex.: 120"
+                value={publicoEsperado}
+                onChange={(e) => setPublicoEsperado(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="publico-alvo-ev">
+              Público-alvo <span className="text-brand-deep/40 font-normal">(opcional)</span>
+            </label>
+            <input
+              id="publico-alvo-ev"
+              className="form-input"
+              placeholder="Ex.: Residentes do bairro Polana Caniço"
+              value={publicoAlvo}
+              onChange={(e) => setPublicoAlvo(e.target.value)}
+            />
+          </div>
+        </>
+      )}
 
       {/* Responsáveis */}
       <div className="form-group">

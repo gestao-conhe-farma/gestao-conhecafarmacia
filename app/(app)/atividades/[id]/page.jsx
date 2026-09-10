@@ -14,6 +14,7 @@ import ListaSubtarefas from './ListaSubtarefas'
 import FormSubtarefaInline from './FormSubtarefaInline'
 import SecaoEntrevista from './SecaoEntrevista'
 import PainelEvento from './PainelEvento'
+import EditarDetalhes from './EditarDetalhes'
 
 export const metadata = { title: 'Atividade' }
 
@@ -80,6 +81,14 @@ export default async function PaginaAtividade({ params }) {
               </span>
             </div>
           )}
+          {atividade.local && (
+            <div className="min-w-0">
+              <span className="meta-label">Local</span>
+              <span className="text-sm font-semibold text-brand-deep break-words">
+                {atividade.local}
+              </span>
+            </div>
+          )}
           <div className="min-w-0">
             <span className="meta-label">Responsáveis</span>
             <span className="text-sm font-semibold text-brand-deep">
@@ -92,7 +101,62 @@ export default async function PaginaAtividade({ params }) {
               {atividade.criado_por?.nome}
             </span>
           </div>
+          {atividade.tipo === 'evento' && atividade.orcamento != null && (
+            <div>
+              <span className="meta-label">Orçamento</span>
+              <span className="text-sm font-semibold text-brand-deep">
+                {atividade.orcamento.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MZN
+              </span>
+            </div>
+          )}
+          {atividade.tipo === 'evento' && (atividade.publico_alvo || atividade.publico_esperado != null) && (
+            <div className="min-w-0">
+              <span className="meta-label">Público</span>
+              <span className="text-sm font-semibold text-brand-deep">
+                {atividade.publico_alvo || '—'}
+                {atividade.publico_esperado != null && ` · esperados ${atividade.publico_esperado}`}
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Materiais (evento) */}
+        {atividade.tipo === 'evento' && atividade.materiais && (
+          <div className="mt-5">
+            <span className="meta-label">Materiais necessários</span>
+            <ul className="mt-1 flex flex-wrap gap-2">
+              {atividade.materiais.split('\n').map((m, i) => (
+                m.trim() ? (
+                  <li
+                    key={i}
+                    className="text-[13px] font-medium text-brand-deep/75 bg-brand-bg-alt border border-brand-divider rounded-lg px-2.5 py-1"
+                  >
+                    {m.trim()}
+                  </li>
+                ) : null
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Editar detalhes: coordenação */}
+        {ehSuper && (
+          <div className="mt-6">
+            <EditarDetalhes
+              atividade={{
+                id: atividade.id,
+                titulo: atividade.titulo,
+                descricao: atividade.descricao,
+                prazo: atividade.prazo,
+                local: atividade.local,
+                materiais: atividade.materiais,
+                orcamento: atividade.orcamento,
+                publico_alvo: atividade.publico_alvo,
+                publico_esperado: atividade.publico_esperado,
+              }}
+            />
+          </div>
+        )}
       </header>
 
       {/* Entrevista */}

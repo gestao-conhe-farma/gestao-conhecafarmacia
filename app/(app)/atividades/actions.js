@@ -13,7 +13,8 @@ export async function criarAtividade(payload) {
     return { ok: false, erro: 'Sem permissão.' }
   }
 
-  const { tipo, titulo, descricao, prazo, responsaveis, parent_id, participantes } = payload
+  const { tipo, titulo, descricao, prazo, responsaveis, parent_id, participantes,
+          local, materiais, orcamento, publico_alvo, publico_esperado } = payload
   if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
 
   const supabase = await createClient()
@@ -28,6 +29,11 @@ export async function criarAtividade(payload) {
       criado_por: pessoa.id,
       parent_id: parent_id || null,
       status_evento: tipo === 'evento' ? 'planeada' : null,
+      local: local || null,
+      materiais: materiais || null,
+      orcamento: orcamento === null || orcamento === '' ? null : Number(orcamento),
+      publico_alvo: publico_alvo || null,
+      publico_esperado: publico_esperado === null || publico_esperado === '' ? null : Number(publico_esperado),
     })
     .select('id')
     .single()
@@ -59,6 +65,47 @@ export async function criarAtividade(payload) {
   revalidatePath('/')
   revalidatePath('/atividades')
   return { ok: true, id: atividadeId }
+}
+
+/**
+ * Editar detalhes de atividade/evento/entrevista (super_admin).
+ * Altera só os campos descritivos — tipo, criador, estado e ligações
+ * (parent, responsáveis, participantes) ficam intocados.
+ */
+export async function atualizarAtividade(atividadeId, payload) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+
+  const { titulo, descricao, prazo, local, materiais, orcamento,
+          publico_alvo, publico_esperado } = payload
+  if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
+  if (orcamento != null && (isNaN(Number(orcamento)) || Number(orcamento) < 0)) {
+    return { ok: false, erro: 'Orçamento inválido.' }
+  }
+  if (publico_esperado != null && (isNaN(Number(publico_esperado)) || Number(publico_esperado) < 0)) {
+    return { ok: false, erro: 'N.º de participantes esperados inválido.' }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('atividades')
+    .update({
+      titulo: titulo.trim(),
+      descricao: descricao || null,
+      prazo: prazo || null,
+      local: local || null,
+      materiais: materiais || null,
+      orcamento: orcamento === null || orcamento === '' ? null : Number(orcamento),
+      publico_alvo: publico_alvo || null,
+      publico_esperado: publico_esperado === null || publico_esperado === '' ? null : Number(publico_esperado),
+    })
+    .eq('id', atividadeId)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath(`/atividades/${atividadeId}`)
+  revalidatePath('/atividades')
+  revalidatePath('/')
+  return { ok: true }
 }
 
 /** Convidar mais participantes para uma entrevista (super_admin). */
