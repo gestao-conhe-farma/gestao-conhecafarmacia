@@ -10,6 +10,7 @@ import {
   listarEquipa,
 } from '@/lib/dados'
 import SecaoPautaPresencas from './SecaoPautaPresencas'
+import EditarReuniao from './EditarReuniao'
 import SecaoNotas from './SecaoNotas'
 import SecaoPlanos from './SecaoPlanos'
 import SecaoResumo from './SecaoResumo'
@@ -117,6 +118,20 @@ export default async function PaginaReuniao({ params }) {
             </span>
           </div>
         </div>
+
+        {/* Editar detalhes: coordenação, enquanto a reunião está agendada */}
+        {ehSuper && reuniao.estado === 'agendada' && (
+          <EditarReuniao
+            reuniao={{
+              id: reuniao.id,
+              titulo: reuniao.titulo,
+              tipo: reuniao.tipo,
+              data_hora: reuniao.data_hora,
+              local: reuniao.local,
+              pauta: reuniao.pauta,
+            }}
+          />
+        )}
       </header>
 
       {/* 01 — Pauta e presenças */}

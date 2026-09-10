@@ -193,6 +193,79 @@ export async function convocarParticipantes(reuniaoId, pessoaIds) {
   return { ok: true }
 }
 
+/**
+ * Editar os detalhes de uma reunião (super_admin): título, tipo, data/hora,
+ * local e pauta. Bloqueado depois de a ata ser publicada — o registo fica
+ * imutável como documento oficial.
+ */
+export async function editarReuniao(reuniaoId, payload) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+
+  const supabase = await createClient()
+  if (await ataPublicada(supabase, reuniaoId)) {
+    return { ok: false, erro: 'A ata já foi publicada — os detalhes da reunião estão fechados.' }
+  }
+
+  const { titulo, tipo, dataHora, local, pauta } = payload
+  if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
+  if (!dataHora) return { ok: false, erro: 'A data e hora são obrigatórias.' }
+
+  const { error } = await supabase
+    .from('reunioes')
+    .update({
+      titulo: titulo.trim(),
+      tipo: tipo === 'urgente' ? 'urgente' : 'mensal',
+      data_hora: dataHora,
+      local: local?.trim() || null,
+      pauta: pauta?.trim() || null,
+    })
+    .eq('id', reuniaoId)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath(`/reunioes/${reuniaoId}`)
+  revalidatePath('/reunioes')
+  return { ok: true }
+}
+
+/**
+ * Retirar o convite de um participante (super_admin). Só é possível
+ * enquanto a presença não foi registada e a ata não foi publicada.
+ */
+export async function removerParticipante(reuniaoId, pessoaId) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+  if (pessoaId === pessoa.id) {
+    return { ok: false, erro: 'Não podes retirar o teu próprio convite.' }
+  }
+
+  const supabase = await createClient()
+  if (await ataPublicada(supabase, reuniaoId)) {
+    return { ok: false, erro: 'A ata já foi publicada — os convocados estão fechados.' }
+  }
+
+  const { data: registo } = await supabase
+    .from('reuniao_participantes')
+    .select('presenca')
+    .eq('reuniao_id', reuniaoId)
+    .eq('pessoa_id', pessoaId)
+    .single()
+  if (!registo) return { ok: false, erro: 'Convite não encontrado.' }
+  if (registo.presenca) {
+    return { ok: false, erro: 'A presença deste membro já foi registada — não pode ser retirado.' }
+  }
+
+  const { error } = await supabase
+    .from('reuniao_participantes')
+    .delete()
+    .eq('reuniao_id', reuniaoId)
+    .eq('pessoa_id', pessoaId)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath(`/reunioes/${reuniaoId}`)
+  return { ok: true }
+}
+
 /** O convocado confirma presença (antes da reunião). */
 export async function confirmarPresencaReuniao(reuniaoId) {
   const { pessoa } = await getUtilizadorAtual()

@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { CalendarCheck, Check, Loader2, UserPlus, X } from 'lucide-react'
-import { confirmarPresencaReuniao, marcarPresenca, convocarParticipantes } from '../actions'
+import { CalendarCheck, Check, Loader2, UserPlus, UserMinus, X } from 'lucide-react'
+import { confirmarPresencaReuniao, marcarPresenca, convocarParticipantes, removerParticipante } from '../actions'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 const PRESENCAS = [
   { v: 'presente', l: 'Presente', cls: 'text-brand-accent border-brand-accent bg-brand-accent/10' },
@@ -25,6 +26,7 @@ export default function SecaoPautaPresencas({
   const [aProcessar, setAProcessar] = useState(null)
   const [convocar, setConvocar] = useState(false)
   const [novos, setNovos] = useState([])
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   const pontosPauta = (pauta || '')
     .split('\n')
@@ -60,6 +62,23 @@ export default function SecaoPautaPresencas({
       await convocarParticipantes(reuniaoId, novos)
       setConvocar(false)
       setNovos([])
+      router.refresh()
+    } finally {
+      setAProcessar(null)
+    }
+  }
+
+  async function retirarConvite(pessoaId, nome) {
+    const ok = await pedirConfirmacao({
+      titulo: `Retirar o convite de ${nome}?`,
+      descricao: 'A pessoa deixa de ser convocada e de ver esta reunião como participante.',
+      confirmarTxt: 'Retirar convite',
+      perigoso: true,
+    })
+    if (!ok) return
+    setAProcessar(pessoaId)
+    try {
+      await removerParticipante(reuniaoId, pessoaId)
       router.refresh()
     } finally {
       setAProcessar(null)
@@ -141,6 +160,23 @@ export default function SecaoPautaPresencas({
                   <span className="text-xs text-brand-accent font-semibold">Aguarda a tua confirmação</span>
                 )}
 
+                {/* Retirar convite (superadmin, antes de presença/ata) */}
+                {ehSuper && !meu && estado === 'agendada' && !p.presenca && (
+                  <button
+                    onClick={() => retirarConvite(p.pessoa_id, pessoa?.nome ?? 'membro')}
+                    disabled={aProcessar === p.pessoa_id}
+                    title={`Retirar convite de ${pessoa?.nome}`}
+                    aria-label={`Retirar convite de ${pessoa?.nome}`}
+                    className="w-8 h-8 grid place-items-center rounded-lg text-red-500/50 hover:text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
+                  >
+                    {aProcessar === p.pessoa_id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <UserMinus size={15} />
+                    )}
+                  </button>
+                )}
+
                 {/* Marcação de presença (superadmin, pós-reunião) */}
                 {ehSuper && (
                   <div className="flex gap-1.5">
@@ -218,6 +254,8 @@ export default function SecaoPautaPresencas({
           </div>
         )}
       </div>
+
+      {caixaConfirmacao}
     </section>
   )
 }
