@@ -34,8 +34,9 @@ export default async function PaginaInicio({ searchParams }) {
     (s) => s.status !== 'concluida' && s.prazo && new Date(s.prazo) < new Date()
   )
 
-  // Eventos para o calendário de prazos: atividades e subtarefas com prazo.
-  // Subtarefas pendentes de aprovação não contam — ainda não são compromisso.
+  // Eventos para o calendário de prazos: atividades, subtarefas com prazo
+  // e reuniões agendadas. Subtarefas pendentes de aprovação não contam —
+  // ainda não são compromisso.
   const eventosCalendario = [
     ...datasFuturas.atividades.map((a) => ({
       id: `a-${a.id}`,
@@ -55,6 +56,14 @@ export default async function PaginaInicio({ searchParams }) {
         status: s.status,
         href: `/atividades/${s.atividade_id}`,
       })),
+    ...datasFuturas.reunioes.map((r) => ({
+      id: `r-${r.id}`,
+      titulo: r.titulo,
+      tipo: 'reuniao',
+      prazo: r.data_hora,
+      status: 'aberta',
+      href: `/reunioes/${r.id}`,
+    })),
   ]
 
   const stats = [
@@ -63,6 +72,23 @@ export default async function PaginaInicio({ searchParams }) {
     { label: 'Entrevistas', valor: atividades.filter((a) => a.tipo === 'entrevista').length, icon: UserCheck },
     { label: 'Tarefas em curso', valor: subtarefasVisiveis.filter((s) => s.status === 'aprovada').length, icon: Clock },
   ]
+
+  // Reunião em destaque: só aparece quando há reunião agendada na semana
+  // atual (segunda a domingo). A mais próxima da semana entra em cena.
+  const agora = new Date()
+  const segundaFeira = new Date(agora)
+  segundaFeira.setDate(agora.getDate() - ((agora.getDay() + 6) % 7))
+  segundaFeira.setHours(0, 0, 0, 0)
+  const domingo = new Date(segundaFeira)
+  domingo.setDate(segundaFeira.getDate() + 6)
+  domingo.setHours(23, 59, 59, 999)
+
+  const reuniaoDaSemana = datasFuturas.reunioes
+    .filter((r) => {
+      const d = new Date(r.data_hora)
+      return d >= segundaFeira && d <= domingo
+    })
+    .sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora))[0]
 
   return (
     <div className="container-app">
@@ -108,6 +134,9 @@ export default async function PaginaInicio({ searchParams }) {
           </div>
         ))}
       </div>
+
+      {/* Destaque: reunião desta semana (só na semana da reunião) */}
+      {reuniaoDaSemana && <DestaqueReuniao reuniao={reuniaoDaSemana} />}
 
       {/* Secção: lista editorial */}
       <div className="flex flex-wrap items-center justify-between gap-3 mt-9 mb-4">
@@ -226,5 +255,62 @@ export default async function PaginaInicio({ searchParams }) {
         <CalendarioPrazos eventos={eventosCalendario} largo />
       </div>
     </div>
+  )
+}
+
+/** Banda editorial com a reunião desta semana — verde, com data/hora/local. */
+function DestaqueReuniao({ reuniao }) {
+  const data = new Date(reuniao.data_hora)
+  const quando = data.toLocaleString('pt-PT', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const dia = data.getDate().toString().padStart(2, '0')
+  const mes = data.toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '')
+  const urgente = reuniao.tipo === 'urgente'
+
+  return (
+    <Link
+      href={`/reunioes/${reuniao.id}`}
+      className="group block mt-6 border-y border-brand-accent/30 bg-brand-accent/[0.06] hover:bg-brand-accent/[0.09] transition-colors"
+    >
+      <div className="flex items-center gap-5 py-5">
+        {/* Data em destaque */}
+        <div className="shrink-0 text-center px-1">
+          <p className="text-[30px] leading-none font-extrabold text-brand-deep tabular-nums">
+            {dia}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-brand-accent mt-1">
+            {mes}
+          </p>
+        </div>
+
+        <div className="w-px self-stretch bg-brand-accent/25" aria-hidden="true" />
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-brand-accent flex items-center gap-2">
+            Reunião esta semana
+          </p>
+          <p className="text-[15px] font-bold text-brand-deep mt-1 truncate group-hover:text-brand-primary transition-colors">
+            {reuniao.titulo}
+          </p>
+          <p className="text-sm text-brand-deep/60 mt-0.5 capitalize">
+            {quando}
+            {reuniao.local && ` · ${reuniao.local}`}
+          </p>
+        </div>
+
+        <span
+          className={`badge shrink-0 ${
+            urgente ? 'bg-amber-500/10 text-amber-600' : 'bg-brand-accent/10 text-brand-accent'
+          }`}
+        >
+          {urgente ? 'Urgente' : 'Mensal'}
+        </span>
+      </div>
+    </Link>
   )
 }

@@ -38,6 +38,7 @@ export default function PreVisualizador({ doc, fechar }) {
   const refDocx = useRef(null)
   const refIframe = useRef(null)
   const carregouRef = useRef(false) // evita duplo fetch/render (React StrictMode)
+  const canceladoRef = useRef(false) // modal fechado a meio do carregamento
 
   const tipo = doc.mime_type || ''
   const extensao = (doc.nome_ficheiro?.split('.').pop() || '').toLowerCase()
@@ -54,6 +55,7 @@ export default function PreVisualizador({ doc, fechar }) {
   /* Montagem + Esc + bloqueio de scroll + foco */
   useEffect(() => {
     setMontado(true)
+    canceladoRef.current = false // StrictMode re-executa o efeito — rearmar
     const aoTeclar = (e) => {
       if (e.key === 'Escape') fechar()
     }
@@ -61,6 +63,7 @@ export default function PreVisualizador({ doc, fechar }) {
     const overflowAnterior = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
+      canceladoRef.current = true // aborta o renderAsync pendente no unmount
       window.removeEventListener('keydown', aoTeclar)
       document.body.style.overflow = overflowAnterior
     }
@@ -72,25 +75,30 @@ export default function PreVisualizador({ doc, fechar }) {
     carregouRef.current = true
     setEstado('a-carregar')
     try {
-      if (ehTxt || ehDocx) {
+      if (ehTxt) {
         const res = await fetch(`/documentos/${doc.id}/preview`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        if (ehTxt) {
-          setTxt(await res.text())
-        } else {
-          const blob = await res.blob()
-          // className default ('docx') → wrapper fica com class "docx-wrapper"
-          await renderAsync(blob, refDocx.current, null, {
-            inWrapper: true,
-            ignoreWidth: false,
-            ignoreHeight: false,
-            experimental: false,
-            useBase64URL: true,
-          })
-        }
+        if (canceladoRef.current) return
+        setTxt(await res.text())
+      } else if (ehDocx) {
+        const res = await fetch(`/documentos/${doc.id}/preview`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const blob = await res.blob()
+        // O modal pode ter sido fechado durante o fetch — o contentor já
+        // não existe e o renderAsync rebentaria com "setting 'innerHTML'".
+        if (canceladoRef.current || !refDocx.current) return
+        // className default ('docx') → wrapper fica com class "docx-wrapper"
+        await renderAsync(blob, refDocx.current, null, {
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          experimental: false,
+          useBase64URL: true,
+        })
       }
-      setEstado('pronto')
+      if (!canceladoRef.current) setEstado('pronto')
     } catch (e) {
+      if (canceladoRef.current) return // fecho durante o carregamento — ignorar
       console.error('[preview] falha ao renderizar', e)
       setMensagemErro(
         'Não foi possível renderizar este documento no navegador. Descarrega-o para o visualizar.'

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Loader2, RefreshCw } from 'lucide-react'
+import { Loader2, RefreshCw, Settings } from 'lucide-react'
 import { gerarReunioesMensais, guardarConfiguracaoReunioes } from './actions'
 
 const DIAS_SEMANA = [

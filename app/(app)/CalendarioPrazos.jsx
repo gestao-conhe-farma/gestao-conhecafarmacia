@@ -19,6 +19,7 @@ const ROTULO_TIPO = {
   evento: 'Evento',
   entrevista: 'Entrevista',
   subtarefa: 'Tarefa',
+  reuniao: 'Reunião',
 }
 
 function chaveDia(d) {
