@@ -146,7 +146,7 @@ export default function EditarDetalhes({ atividade }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="form-group">
           <label className="form-label" htmlFor="ea-orcamento">
-            Orçamento estimado <span className="text-brand-deep/40 font-normal">(MZN)</span>
+            Orçamento estimado <span className="text-brand-deep/40 font-normal">(KZ)</span>
           </label>
           <input
             id="ea-orcamento"

@@ -118,14 +118,14 @@ export async function atualizarContactos({ telefone, whatsapp }) {
     return {
       ok: false,
       erro:
-        'Telefone inválido — usa o formato internacional: + código do país e 8–14 dígitos (ex.: +258841234567). Números locais sem o +código não funcionam em ligações nem no WhatsApp.',
+        'Telefone inválido — usa o formato internacional: + código do país e 8–14 dígitos (ex.: +244923456789). Números locais sem o +código não funcionam em ligações nem no WhatsApp.',
     }
   }
   if (zap && !validarNumeroE164(zap)) {
     return {
       ok: false,
       erro:
-        'WhatsApp inválido — usa o formato internacional: + código do país e 8–14 dígitos (ex.: +258841234567).',
+        'WhatsApp inválido — usa o formato internacional: + código do país e 8–14 dígitos (ex.: +244923456789).',
     }
   }
 

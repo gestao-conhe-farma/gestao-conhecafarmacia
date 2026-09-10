@@ -214,20 +214,50 @@ export async function confirmarParticipacao(atividadeId) {
   return { ok: true }
 }
 
-/** Marcar evento como concluído — sempre manual, só super_admin. */
-export async function concluirEvento(atividadeId) {
+/**
+ * Marcar evento como concluído — sempre manual, só super_admin.
+ * Regista a audiência real (publico_real) para comparar com a esperada.
+ * Se não for passada, mantém a existente (ou fica sem registo).
+ */
+export async function concluirEvento(atividadeId, publicoReal = null) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+  if (publicoReal != null && (isNaN(Number(publicoReal)) || Number(publicoReal) < 0)) {
+    return { ok: false, erro: 'N.º de participantes real inválido.' }
+  }
 
   const supabase = await createClient()
   const { error } = await supabase
     .from('atividades')
-    .update({ status_evento: 'concluida' })
+    .update({
+      status_evento: 'concluida',
+      publico_real: publicoReal === null || publicoReal === '' ? null : Number(publicoReal),
+    })
     .eq('id', atividadeId)
     .eq('tipo', 'evento')
 
   if (error) return { ok: false, erro: error.message }
   revalidatePath('/')
+  revalidatePath(`/atividades/${atividadeId}`)
+  return { ok: true }
+}
+
+/** Corrigir a audiência real de um evento já concluído (super_admin). */
+export async function definirPublicoReal(atividadeId, publicoReal) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+  if (publicoReal === null || publicoReal === '' || isNaN(Number(publicoReal)) || Number(publicoReal) < 0) {
+    return { ok: false, erro: 'N.º de participantes real inválido.' }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('atividades')
+    .update({ publico_real: Number(publicoReal) })
+    .eq('id', atividadeId)
+    .eq('tipo', 'evento')
+
+  if (error) return { ok: false, erro: error.message }
   revalidatePath(`/atividades/${atividadeId}`)
   return { ok: true }
 }

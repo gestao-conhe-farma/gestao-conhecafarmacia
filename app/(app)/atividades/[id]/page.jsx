@@ -108,11 +108,11 @@ export default async function PaginaAtividade({ params }) {
               {atividade.criado_por?.nome}
             </span>
           </div>
-          {atividade.tipo === 'evento' && atividade.orcamento != null && (
+          {atividade.orcamento != null && (
             <div>
               <span className="meta-label">Orçamento</span>
               <span className="text-sm font-semibold text-brand-deep">
-                {atividade.orcamento.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} MZN
+                {atividade.orcamento.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} KZ
               </span>
             </div>
           )}
@@ -127,8 +127,8 @@ export default async function PaginaAtividade({ params }) {
           )}
         </div>
 
-        {/* Materiais (evento): checklist interativa com fallback ao texto antigo */}
-        {atividade.tipo === 'evento' && itensMateriais.length > 0 && (
+        {/* Materiais (evento/atividade): checklist interativa com fallback ao texto antigo */}
+        {(atividade.tipo === 'evento' || atividade.tipo === 'atividade') && itensMateriais.length > 0 && (
           <div className="mt-5 max-w-xl">
             <span className="meta-label">Materiais necessários</span>
             <ListaMateriais
@@ -138,7 +138,7 @@ export default async function PaginaAtividade({ params }) {
             />
           </div>
         )}
-        {atividade.tipo === 'evento' && itensMateriais.length === 0 && atividade.materiais && (
+        {(atividade.tipo === 'evento' || atividade.tipo === 'atividade') && itensMateriais.length === 0 && atividade.materiais && (
           <div className="mt-5">
             <span className="meta-label">Materiais necessários</span>
             <ul className="mt-1 flex flex-wrap gap-2">
@@ -196,6 +196,8 @@ export default async function PaginaAtividade({ params }) {
           status={atividade.status_evento}
           ehSuper={ehSuper}
           filhas={filhas}
+          esperado={atividade.publico_esperado}
+          real={atividade.publico_real}
           num="01"
         />
       )}

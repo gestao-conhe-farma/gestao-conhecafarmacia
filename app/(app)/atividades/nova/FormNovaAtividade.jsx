@@ -133,8 +133,8 @@ export default function FormNovaAtividade({ equipa, pessoaAtualId, eventos }) {
         </div>
       </div>
 
-      {/* Detalhes do evento/entrevista */}
-      {(tipo === 'evento' || tipo === 'entrevista') && (
+      {/* Detalhes: local em todos os tipos; resto específico de evento */}
+      {(tipo === 'evento' || tipo === 'entrevista' || tipo === 'atividade') && (
         <div className="form-group">
           <label className="form-label" htmlFor="local-ev">Local</label>
           <input
@@ -147,7 +147,7 @@ export default function FormNovaAtividade({ equipa, pessoaAtualId, eventos }) {
         </div>
       )}
 
-      {tipo === 'evento' && (
+      {(tipo === 'evento' || tipo === 'atividade') && (
         <>
           <div className="form-group">
             <span className="form-label">
@@ -166,7 +166,7 @@ export default function FormNovaAtividade({ equipa, pessoaAtualId, eventos }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-group">
               <label className="form-label" htmlFor="orcamento-ev">
-                Orçamento estimado <span className="text-brand-deep/40 font-normal">(MZN, opcional)</span>
+                Orçamento estimado <span className="text-brand-deep/40 font-normal">(KZ, opcional)</span>
               </label>
               <input
                 id="orcamento-ev"

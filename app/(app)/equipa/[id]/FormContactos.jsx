@@ -49,7 +49,7 @@ export default function FormContactos({ pessoa }) {
           inputMode="tel"
           value={telefone}
           onChange={(e) => setTelefone(e.target.value)}
-          placeholder="+258 84 123 4567"
+          placeholder="+244 923 456 789"
           autoComplete="tel"
         />
         <p className="text-xs text-brand-deep/45 mt-1">
@@ -67,7 +67,7 @@ export default function FormContactos({ pessoa }) {
           inputMode="tel"
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
-          placeholder="+258 87 765 4321"
+          placeholder="+244 923 456 789"
           autoComplete="tel"
         />
         <p className="text-xs text-brand-deep/45 mt-1">
