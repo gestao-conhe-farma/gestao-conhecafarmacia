@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Loader2, Pencil, Trash2, X, Plus } from 'lucide-react'
 import { criarCategoria, renomearCategoria, eliminarCategoria } from './actions'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 export default function GestorCategorias({ categorias }) {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function GestorCategorias({ categorias }) {
   const [nomeEdicao, setNomeEdicao] = useState('')
   const [aProcessar, setAProcessar] = useState(false)
   const [erro, setErro] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function criar(e) {
     e.preventDefault()
@@ -48,7 +50,13 @@ export default function GestorCategorias({ categorias }) {
   }
 
   async function eliminar(id, nome) {
-    if (!confirm(`Eliminar a categoria “${nome}”?`)) return
+    const ok = await pedirConfirmacao({
+      titulo: `Eliminar a categoria “${nome}”?`,
+      descricao: 'As categorias com documentos associados não podem ser eliminadas.',
+      confirmarTxt: 'Eliminar',
+      perigoso: true,
+    })
+    if (!ok) return
     setErro(null)
     setAProcessar(true)
     try {
@@ -152,6 +160,8 @@ export default function GestorCategorias({ categorias }) {
           )
         )}
       </div>
+
+      {caixaConfirmacao}
     </div>
   )
 }

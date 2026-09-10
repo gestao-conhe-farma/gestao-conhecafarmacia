@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { criarPlano, votarPlano, retirarVoto, decidirPlano, converterPlano } from '../actions'
+import { useConfirmacao, NotaFlutuante } from '@/components/CaixaConfirmacao'
 
 const VOTOS = [
   { v: 'favor', l: 'A favor', icone: ThumbsUp, cls: 'text-brand-accent border-brand-accent bg-brand-accent/10' },
@@ -28,12 +29,14 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
   const [convertendo, setConvertendo] = useState(null) // planoId quando mini-form aberto
+  const [aviso, setAviso] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function acao(fn, chave) {
     setAProcessar(chave)
     try {
       const r = await fn()
-      if (!r?.ok) alert(r?.erro || 'Ocorreu um erro.')
+      if (!r?.ok) setAviso(r?.erro || 'Ocorreu um erro.')
       router.refresh()
     } finally {
       setAProcessar(null)
@@ -177,7 +180,15 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
                         Aprovar
                       </button>
                       <button
-                        onClick={() => acao(() => decidirPlano(reuniaoId, plano.id, 'rejeitado'), `d-${plano.id}`)}
+                        onClick={async () => {
+                          const ok = await pedirConfirmacao({
+                            titulo: `Rejeitar o plano “${plano.titulo}”?`,
+                            confirmarTxt: 'Rejeitar',
+                            perigoso: true,
+                          })
+                          if (!ok) return
+                          acao(() => decidirPlano(reuniaoId, plano.id, 'rejeitado'), `d-${plano.id}`)
+                        }}
                         disabled={aProcessar === `d-${plano.id}`}
                         className="btn btn-small btn-ghost border border-red-500/30 text-red-600"
                       >
@@ -230,6 +241,9 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
             })}
           </div>
         )}
+
+        {caixaConfirmacao}
+        {aviso && <NotaFlutuante mensagem={aviso} aoFechar={() => setAviso(null)} />}
       </div>
     </section>
   )

@@ -5,6 +5,7 @@ import { useRef, useState } from 'react'
 import { FileDown, Loader2, Paperclip, Trash2, Upload } from 'lucide-react'
 import { registarAnexoReuniao, removerAnexoReuniao } from '../actions'
 import { formatarTamanho } from '@/lib/documentos'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 export default function SecaoAnexos({ reuniaoId, anexos, ehSuper, num }) {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function SecaoAnexos({ reuniaoId, anexos, ehSuper, num }) {
   const [aCarregar, setACarregar] = useState(false)
   const [erro, setErro] = useState(null)
   const [aProcessar, setAProcessar] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function carregar(e) {
     const ficheiro = e.target.files?.[0]
@@ -45,7 +47,13 @@ export default function SecaoAnexos({ reuniaoId, anexos, ehSuper, num }) {
   }
 
   async function remover(anexoId) {
-    if (!confirm('Remover este anexo?')) return
+    const ok = await pedirConfirmacao({
+      titulo: 'Remover este anexo?',
+      descricao: 'O ficheiro é também removido do armazenamento.',
+      confirmarTxt: 'Remover',
+      perigoso: true,
+    })
+    if (!ok) return
     setAProcessar(anexoId)
     try {
       const r = await removerAnexoReuniao(reuniaoId, anexoId)
@@ -125,6 +133,8 @@ export default function SecaoAnexos({ reuniaoId, anexos, ehSuper, num }) {
             ))}
           </ul>
         )}
+
+        {caixaConfirmacao}
       </div>
     </section>
   )

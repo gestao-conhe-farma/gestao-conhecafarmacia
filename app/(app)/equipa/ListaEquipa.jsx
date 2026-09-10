@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Trash2 } from 'lucide-react'
 import { alterarRole, removerMembro } from './actions'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 export default function ListaEquipa({ equipa, pessoaAtualId }) {
   const router = useRouter()
   const [aProcessar, setAProcessar] = useState(null)
   const [erro, setErro] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function mudarRole(id, role) {
     setAProcessar(id)
@@ -23,9 +25,13 @@ export default function ListaEquipa({ equipa, pessoaAtualId }) {
   }
 
   async function remover(id, nome) {
-    if (!confirm(`Remover o acesso de ${nome}? Esta ação apaga a conta e não pode ser revertida.`)) {
-      return
-    }
+    const ok = await pedirConfirmacao({
+      titulo: `Remover o acesso de ${nome}?`,
+      descricao: 'Esta ação apaga a conta e não pode ser revertida.',
+      confirmarTxt: 'Remover acesso',
+      perigoso: true,
+    })
+    if (!ok) return
     setAProcessar(id)
     setErro(null)
     try {
@@ -107,6 +113,8 @@ export default function ListaEquipa({ equipa, pessoaAtualId }) {
           )
         })}
       </ul>
+
+      {caixaConfirmacao}
     </div>
   )
 }

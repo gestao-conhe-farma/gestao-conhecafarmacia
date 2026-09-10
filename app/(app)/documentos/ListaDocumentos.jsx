@@ -12,6 +12,7 @@ import {
 import { formatarTamanho } from '@/lib/documentos'
 import { eliminarDocumento } from './actions'
 import PreVisualizador from './PreVisualizador'
+import { useConfirmacao, NotaFlutuante } from '@/components/CaixaConfirmacao'
 
 function chipFicheiro(mime) {
   if (mime?.startsWith('image/')) return { cls: 'file-img', label: 'IMG' }
@@ -26,13 +27,21 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
   const router = useRouter()
   const [aEliminar, setAEliminar] = useState(null)
   const [emPreview, setEmPreview] = useState(null)
+  const [aviso, setAviso] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function eliminar(id, titulo) {
-    if (!confirm(`Eliminar “${titulo}”? O ficheiro é removido permanentemente.`)) return
+    const ok = await pedirConfirmacao({
+      titulo: `Eliminar “${titulo}”?`,
+      descricao: 'O ficheiro é removido permanentemente da biblioteca e do armazenamento.',
+      confirmarTxt: 'Eliminar',
+      perigoso: true,
+    })
+    if (!ok) return
     setAEliminar(id)
     try {
       const r = await eliminarDocumento(id)
-      if (!r.ok) alert(r.erro)
+      if (!r.ok) setAviso(r.erro)
       router.refresh()
     } finally {
       setAEliminar(null)
@@ -125,6 +134,8 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
     </ul>
 
     {emPreview && <PreVisualizador doc={emPreview} fechar={() => setEmPreview(null)} />}
+    {aviso && <NotaFlutuante mensagem={aviso} aoFechar={() => setAviso(null)} />}
+    {caixaConfirmacao}
     </>
   )
 }

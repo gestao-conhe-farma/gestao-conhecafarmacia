@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader2, Lock, Pencil, Send, Trash2, X } from 'lucide-react'
 import { adicionarNota, editarNota, apagarNota } from '../actions'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 export default function SecaoNotas({ reuniaoId, notas, pessoaAtualId, ehSuper, ataPublicada, num }) {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function SecaoNotas({ reuniaoId, notas, pessoaAtualId, ehSuper, a
   const [aEditar, setAEditar] = useState(null)
   const [textoEdicao, setTextoEdicao] = useState('')
   const [aProcessar, setAProcessar] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function enviar(e) {
     e.preventDefault()
@@ -46,7 +48,12 @@ export default function SecaoNotas({ reuniaoId, notas, pessoaAtualId, ehSuper, a
   }
 
   async function eliminar(notaId) {
-    if (!confirm('Apagar esta nota?')) return
+    const ok = await pedirConfirmacao({
+      titulo: 'Apagar esta nota?',
+      confirmarTxt: 'Apagar',
+      perigoso: true,
+    })
+    if (!ok) return
     setAProcessar(notaId)
     try {
       const r = await apagarNota(reuniaoId, notaId)
@@ -186,6 +193,8 @@ export default function SecaoNotas({ reuniaoId, notas, pessoaAtualId, ehSuper, a
         ) : (
           erro && <p className="text-sm text-red-600 mt-3">{erro}</p>
         )}
+
+        {caixaConfirmacao}
       </div>
     </section>
   )

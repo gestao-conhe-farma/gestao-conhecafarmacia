@@ -4,15 +4,22 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, LogOut } from 'lucide-react'
 import { terminarTodasSessoes } from './actions'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 export default function CartaoSessao() {
   const router = useRouter()
   const [aProcessar, setAProcessar] = useState(false)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function terminar() {
-    if (!confirm('Terminar a sessão em TODOS os dispositivos onde tens sessão iniciada?')) {
-      return
-    }
+    const ok = await pedirConfirmacao({
+      titulo: 'Terminar todas as sessões?',
+      descricao:
+        'A sessão é terminada em TODOS os dispositivos onde tens sessão iniciada.',
+      confirmarTxt: 'Terminar sessões',
+      perigoso: true,
+    })
+    if (!ok) return
     setAProcessar(true)
     try {
       await terminarTodasSessoes()
@@ -40,6 +47,8 @@ export default function CartaoSessao() {
           {aProcessar ? 'A terminar…' : 'Terminar todas as sessões'}
         </button>
       </div>
+
+      {caixaConfirmacao}
     </div>
   )
 }
