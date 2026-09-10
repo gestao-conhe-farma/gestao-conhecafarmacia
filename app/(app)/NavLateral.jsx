@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   Settings,
   FolderOpen,
+  MessagesSquare,
 } from 'lucide-react'
 
 // Chaves de texto → componentes (ícones não podem atravessar a fronteira
@@ -19,6 +20,7 @@ const ICONES = {
   atividades: ClipboardList,
   aprovacoes: CheckCircle2,
   entrevistas: CalendarCheck,
+  reunioes: MessagesSquare,
   documentos: FolderOpen,
   equipa: Users,
   definicoes: Settings,

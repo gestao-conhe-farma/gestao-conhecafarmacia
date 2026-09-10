@@ -16,7 +16,7 @@ export default async function AppLayout({ children }) {
   const supabase = await createClient()
 
   // Contadores para os badges da navegação
-  const [pendentes, convites] = await Promise.all([
+  const [pendentes, convites, reunioesPendentes] = await Promise.all([
     pessoa.role === 'super_admin'
       ? supabase
           .from('subtarefas')
@@ -28,10 +28,16 @@ export default async function AppLayout({ children }) {
       .select('id', { count: 'exact', head: true })
       .eq('pessoa_id', pessoa.id)
       .eq('status', 'convidado'),
+    supabase
+      .from('reuniao_participantes')
+      .select('id', { count: 'exact', head: true })
+      .eq('pessoa_id', pessoa.id)
+      .eq('status', 'convidado'),
   ])
 
   const nPendentes = pendentes?.count ?? 0
   const nConvites = convites?.count ?? 0
+  const nConvocorias = reunioesPendentes?.count ?? 0
 
   const items = [
     { href: '/', label: 'Início', icon: 'inicio' },
@@ -40,6 +46,7 @@ export default async function AppLayout({ children }) {
       ? [{ href: '/aprovacoes', label: 'Aprovações', icon: 'aprovacoes', badge: nPendentes }]
       : []),
     { href: '/entrevistas', label: 'As minhas entrevistas', icon: 'entrevistas', badge: nConvites },
+    { href: '/reunioes', label: 'Reuniões', icon: 'reunioes', badge: nConvocorias },
     { href: '/documentos', label: 'Documentos', icon: 'documentos' },
     { href: '/equipa', label: 'Equipa', icon: 'equipa', soSuper: true },
     { href: '/definicoes', label: 'Definições', icon: 'definicoes' },
