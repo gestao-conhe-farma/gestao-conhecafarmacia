@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  LogOut, Menu, Moon, Plus, Sun, X,
+  LogOut, Menu, Moon, Plus, Sun, X, ChevronRight,
   LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen, MessagesSquare,
 } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
@@ -207,12 +207,19 @@ export default function DrawerMobile({ items, pessoa }) {
                   <span className="w-9 h-9 rounded-full bg-white/10 text-white grid place-items-center font-bold text-xs shrink-0">
                     {iniciais(pessoa.nome)}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-white truncate">{pessoa.nome}</p>
-                    <p className="text-[11px] text-white/45 truncate">
-                      {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
-                    </p>
-                  </div>
+                  <Link
+                    href={`/equipa/${pessoa.id}`}
+                    aria-label="Ver o meu perfil"
+                    className="min-w-0 flex-1 flex items-center gap-1.5 rounded-lg px-1.5 -mx-1.5 py-1 hover:bg-white/[0.06] transition-colors"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold text-white truncate">{pessoa.nome}</span>
+                      <span className="block text-[11px] text-white/45 truncate">
+                        {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
+                      </span>
+                    </span>
+                    <ChevronRight size={15} className="text-white/40 shrink-0" aria-hidden="true" />
+                  </Link>
                   <button
                     onClick={sair}
                     aria-label="Terminar sessão"

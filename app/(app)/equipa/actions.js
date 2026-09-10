@@ -2,6 +2,7 @@
 
 import { createAdminClient, createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { normalizarNumero, validarNumeroE164 } from '@/lib/contactos'
 
 /**
  * Criar conta de membro da equipa (só super_admin).
@@ -66,6 +67,46 @@ export async function alterarRole(pessoaId, novoRole) {
 
   if (error) return { ok: false, erro: error.message }
   revalidatePath('/equipa')
+  return { ok: true }
+}
+
+/**
+ * Atualiza os contactos (telefone / WhatsApp) do próprio membro.
+ * Normaliza para E.164 (+ código do país, 8–14 dígitos) — o mesmo
+ * formato validado na base. Números locais sem código do país são
+ * rejeitados: sem o código, tanto as chamadas como o wa.me falham.
+ */
+export async function atualizarContactos({ telefone, whatsapp }) {
+  const { pessoa } = await getUtilizadorAtual()
+
+  const tel = normalizarNumero(telefone)
+  const zap = normalizarNumero(whatsapp)
+
+  if (tel && !validarNumeroE164(tel)) {
+    return {
+      ok: false,
+      erro:
+        'Telefone inválido — usa o formato internacional: + código do país e 8–14 dígitos (ex.: +258841234567). Números locais sem o +código não funcionam em ligações nem no WhatsApp.',
+    }
+  }
+  if (zap && !validarNumeroE164(zap)) {
+    return {
+      ok: false,
+      erro:
+        'WhatsApp inválido — usa o formato internacional: + código do país e 8–14 dígitos (ex.: +258841234567).',
+    }
+  }
+
+  const admin = await createAdminClient()
+  const { error } = await admin
+    .from('pessoas')
+    .update({ telefone: tel, whatsapp: zap })
+    .eq('id', pessoa.id)
+
+  if (error) return { ok: false, erro: error.message }
+
+  revalidatePath('/equipa')
+  revalidatePath(`/equipa/${pessoa.id}`)
   return { ok: true }
 }
 
