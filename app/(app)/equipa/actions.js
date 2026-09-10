@@ -7,6 +7,8 @@ import { normalizarNumero, validarNumeroE164 } from '@/lib/contactos'
 /**
  * Criar conta de membro da equipa (só super_admin).
  * Usa a Admin API (service_role) + insert em pessoas.
+ * Se já existir conta desativada com este email, é reativada
+ * (mesma identidade, histórico preservado) em vez de falhar.
  */
 export async function criarConta({ nome, email, password, role }) {
   const { pessoa } = await getUtilizadorAtual()
@@ -20,10 +22,40 @@ export async function criarConta({ nome, email, password, role }) {
   }
 
   const admin = await createAdminClient()
+  const emailLimpo = email.trim().toLowerCase()
 
-  // 1) Criar no Auth
+  // 1) Conta desativada com o mesmo email? → reativar
+  const { data: lista } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  const existente = lista?.users?.find((u) => u.email?.toLowerCase() === emailLimpo)
+  if (existente) {
+    const { data: registo } = await admin
+      .from('pessoas')
+      .select('ativo')
+      .eq('id', existente.id)
+      .maybeSingle()
+
+    if (registo && !registo.ativo) {
+      const { error: erroDesban } = await admin.auth.admin.updateUserById(existente.id, {
+        ban_duration: 'none',
+        password,
+      })
+      if (erroDesban) return { ok: false, erro: erroDesban.message }
+
+      const { error } = await admin
+        .from('pessoas')
+        .update({ nome: nome.trim(), role, ativo: true })
+        .eq('id', existente.id)
+      if (error) return { ok: false, erro: error.message }
+
+      revalidatePath('/equipa')
+      return { ok: true, reativada: true }
+    }
+    return { ok: false, erro: 'Já existe uma conta com este email.' }
+  }
+
+  // 2) Criar no Auth
   const { data, error } = await admin.auth.admin.createUser({
-    email: email.trim().toLowerCase(),
+    email: emailLimpo,
     password,
     email_confirm: true,
     user_metadata: { nome: nome.trim() },
@@ -36,11 +68,11 @@ export async function criarConta({ nome, email, password, role }) {
     return { ok: false, erro: error.message }
   }
 
-  // 2) Registar em pessoas (fonte da verdade do role)
+  // 3) Registar em pessoas (fonte da verdade do role)
   const { error: erroPessoa } = await admin.from('pessoas').insert({
     id: data.user.id,
     nome: nome.trim(),
-    email: email.trim().toLowerCase(),
+    email: emailLimpo,
     role,
   })
 
@@ -110,7 +142,15 @@ export async function atualizarContactos({ telefone, whatsapp }) {
   return { ok: true }
 }
 
-/** Remover acesso de um membro (apaga Auth + registo pessoas). */
+/**
+ * Remover um membro (só super_admin): desativação suave.
+ * - A conta Auth é banida (sem login, sem apagar) e o registo em
+ *   pessoas fica com ativo = false;
+ * - O histórico (notas de reuniões, atividades, documentos, …)
+ *   continua a resolver o nome via join;
+ * - A pessoa sai da directoria, dos selectores e dos perfis.
+ * Reativar = criar conta com o mesmo email (mesma identidade).
+ */
 export async function removerMembro(pessoaId) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
@@ -120,13 +160,24 @@ export async function removerMembro(pessoaId) {
 
   const admin = await createAdminClient()
 
-  const { error: erroAuth } = await admin.auth.admin.deleteUser(pessoaId)
-  if (erroAuth) return { ok: false, erro: erroAuth.message }
+  // 1) Banir a conta Auth (revoga sessões; mantém o utilizador)
+  const { error: erroBan } = await admin.auth.admin.updateUserById(pessoaId, {
+    ban_duration: '876000h', // ~100 anos
+  })
+  if (erroBan) return { ok: false, erro: erroBan.message }
 
-  // RLS não se aplica ao service_role; apaga registo em pessoas
-  const { error } = await admin.from('pessoas').delete().eq('id', pessoaId)
-  if (error) return { ok: false, erro: error.message }
+  // 2) Marcar como inativo em pessoas
+  const { error } = await admin
+    .from('pessoas')
+    .update({ ativo: false })
+    .eq('id', pessoaId)
+  if (error) {
+    // Reverte o ban para não deixar conta bloqueada com registo ativo
+    await admin.auth.admin.updateUserById(pessoaId, { ban_duration: 'none' })
+    return { ok: false, erro: error.message }
+  }
 
   revalidatePath('/equipa')
+  revalidatePath(`/equipa/${pessoaId}`)
   return { ok: true }
 }

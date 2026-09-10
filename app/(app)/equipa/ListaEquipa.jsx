@@ -35,7 +35,8 @@ export default function ListaEquipa({ equipa, pessoaAtualId, ehSuper = false }) 
   async function remover(id, nome) {
     const ok = await pedirConfirmacao({
       titulo: `Remover o acesso de ${nome}?`,
-      descricao: 'Esta ação apaga a conta e não pode ser revertida.',
+      descricao:
+        'A conta é desativada — sem login — e a pessoa sai da equipa. O histórico (notas, atividades) continua a mostrar o nome. Para reativar, cria conta com o mesmo email.',
       confirmarTxt: 'Remover acesso',
       perigoso: true,
     })

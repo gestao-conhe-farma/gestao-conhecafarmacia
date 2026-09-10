@@ -67,6 +67,11 @@ export default async function PaginaPerfil({ params }) {
               <span className={`role-pill ${pessoa.role === 'super_admin' ? 'role-super' : 'role-membro'}`}>
                 {pessoa.role === 'super_admin' ? 'Coordenação' : 'Membro'}
               </span>
+              {!pessoa.ativo && (
+                <span className="role-pill bg-red-500/10 text-red-600 normal-case">
+                  Ex-membro
+                </span>
+              )}
             </p>
           </div>
         </div>

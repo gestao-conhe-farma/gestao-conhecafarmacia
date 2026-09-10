@@ -26,7 +26,11 @@ export default function FormNovoMembro() {
         setErro(r.erro || 'Não foi possível criar a conta.')
         return
       }
-      setMsg(`Conta criada para ${email}. Partilha as credenciais com a pessoa.`)
+      setMsg(
+        r.reativada
+          ? `Conta reativada para ${email} — mesma identidade e histórico. Partilha as novas credenciais.`
+          : `Conta criada para ${email}. Partilha as credenciais com a pessoa.`
+      )
       setNome('')
       setEmail('')
       setPassword('')
