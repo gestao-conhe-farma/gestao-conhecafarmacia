@@ -30,7 +30,6 @@ export async function criarAtividade(payload) {
       parent_id: parent_id || null,
       status_evento: tipo === 'evento' ? 'planeada' : null,
       local: local || null,
-      materiais: materiais || null,
       orcamento: orcamento === null || orcamento === '' ? null : Number(orcamento),
       publico_alvo: publico_alvo || null,
       publico_esperado: publico_esperado === null || publico_esperado === '' ? null : Number(publico_esperado),
@@ -41,6 +40,18 @@ export async function criarAtividade(payload) {
   if (error) return { ok: false, erro: error.message }
 
   const atividadeId = data.id
+
+  // Checklist de materiais (um item por linha do textarea)
+  const itens = (materiais ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+  if (itens.length) {
+    const { error: errMat } = await supabase.from('atividade_materiais').insert(
+      itens.map((nome, i) => ({ atividade_id: atividadeId, nome, ordem: i }))
+    )
+    if (errMat) return { ok: false, erro: errMat.message }
+  }
 
   // Responsáveis
   if (responsaveis?.length) {
@@ -76,8 +87,8 @@ export async function atualizarAtividade(atividadeId, payload) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
-  const { titulo, descricao, prazo, local, materiais, orcamento,
-          publico_alvo, publico_esperado } = payload
+  const { titulo, descricao, prazo, local, materiais,
+          orcamento, publico_alvo, publico_esperado } = payload
   if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
   if (orcamento != null && (isNaN(Number(orcamento)) || Number(orcamento) < 0)) {
     return { ok: false, erro: 'Orçamento inválido.' }
@@ -94,7 +105,6 @@ export async function atualizarAtividade(atividadeId, payload) {
       descricao: descricao || null,
       prazo: prazo || null,
       local: local || null,
-      materiais: materiais || null,
       orcamento: orcamento === null || orcamento === '' ? null : Number(orcamento),
       publico_alvo: publico_alvo || null,
       publico_esperado: publico_esperado === null || publico_esperado === '' ? null : Number(publico_esperado),
@@ -102,13 +112,71 @@ export async function atualizarAtividade(atividadeId, payload) {
     .eq('id', atividadeId)
 
   if (error) return { ok: false, erro: error.message }
+
+  // Materiais: sincroniza a checklist com o texto do formulário
+  // (itens existentes mantêm o estado de marcação; por nome)
+  if (materiais !== undefined) {
+    const itens = (materiais ?? '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+
+    const { data: atuais } = await supabase
+      .from('atividade_materiais')
+      .select('id, nome')
+      .eq('atividade_id', atividadeId)
+    const porNome = new Map((atuais ?? []).map((m) => [m.nome, m.id]))
+    const manter = new Set(itens)
+
+    // Remove os que saíram do texto
+    const aRemover = (atuais ?? []).filter((m) => !manter.has(m.nome)).map((m) => m.id)
+    if (aRemover.length) {
+      await supabase.from('atividade_materiais').delete().in('id', aRemover)
+    }
+
+    // Insere os novos (os que já existem mantêm feito/feito_por)
+    const novos = itens
+      .filter((nome) => !porNome.has(nome))
+      .map((nome, i) => ({ atividade_id: atividadeId, nome, ordem: i }))
+    if (novos.length) {
+      await supabase.from('atividade_materiais').insert(novos)
+    }
+
+    // Reordena
+    for (const [i, nome] of itens.entries()) {
+      const id = porNome.get(nome)
+      if (id) await supabase.from('atividade_materiais').update({ ordem: i }).eq('id', id)
+    }
+  }
+
   revalidatePath(`/atividades/${atividadeId}`)
   revalidatePath('/atividades')
   revalidatePath('/')
   return { ok: true }
 }
 
-/** Convidar mais participantes para uma entrevista (super_admin). */
+/**
+ * Marca/desmarca um item do checklist de materiais (qualquer membro).
+ * Fica registo de quem marcou e quando.
+ */
+export async function alternarMaterial(atividadeId, materialId, feito) {
+  const { pessoa } = await getUtilizadorAtual()
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('atividade_materiais')
+    .update({
+      feito,
+      feito_por: feito ? pessoa.id : null,
+      feito_em: feito ? new Date().toISOString() : null,
+    })
+    .eq('id', materialId)
+    .eq('atividade_id', atividadeId)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath(`/atividades/${atividadeId}`)
+  return { ok: true }
+}
 export async function convidarParticipantes(atividadeId, pessoaIds) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }

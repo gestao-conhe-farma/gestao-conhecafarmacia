@@ -15,6 +15,7 @@ import FormSubtarefaInline from './FormSubtarefaInline'
 import SecaoEntrevista from './SecaoEntrevista'
 import PainelEvento from './PainelEvento'
 import EditarDetalhes from './EditarDetalhes'
+import ListaMateriais from './ListaMateriais'
 
 export const metadata = { title: 'Atividade' }
 
@@ -32,6 +33,12 @@ export default async function PaginaAtividade({ params }) {
   ])
 
   const ehSuper = pessoa.role === 'super_admin'
+
+  // Checklist nova (linhas) com fallback ao texto antigo (migration 0006)
+  const itensMateriais = atividade.atividade_materiais ?? []
+  const textoMateriais = itensMateriais.length
+    ? itensMateriais.map((m) => m.nome).join('\n')
+    : (atividade.materiais ?? '')
   const meuConvite = participantes.find((p) => p.pessoa_id === pessoa.id)
   const confirmadas = participantes.filter((p) => p.status === 'confirmado').length
 
@@ -120,8 +127,18 @@ export default async function PaginaAtividade({ params }) {
           )}
         </div>
 
-        {/* Materiais (evento) */}
-        {atividade.tipo === 'evento' && atividade.materiais && (
+        {/* Materiais (evento): checklist interativa com fallback ao texto antigo */}
+        {atividade.tipo === 'evento' && itensMateriais.length > 0 && (
+          <div className="mt-5 max-w-xl">
+            <span className="meta-label">Materiais necessários</span>
+            <ListaMateriais
+              atividadeId={atividade.id}
+              materiais={itensMateriais}
+              pessoaAtualId={pessoa.id}
+            />
+          </div>
+        )}
+        {atividade.tipo === 'evento' && itensMateriais.length === 0 && atividade.materiais && (
           <div className="mt-5">
             <span className="meta-label">Materiais necessários</span>
             <ul className="mt-1 flex flex-wrap gap-2">
@@ -149,7 +166,7 @@ export default async function PaginaAtividade({ params }) {
                 descricao: atividade.descricao,
                 prazo: atividade.prazo,
                 local: atividade.local,
-                materiais: atividade.materiais,
+                materiais: textoMateriais,
                 orcamento: atividade.orcamento,
                 publico_alvo: atividade.publico_alvo,
                 publico_esperado: atividade.publico_esperado,
