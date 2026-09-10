@@ -48,7 +48,7 @@ export default async function AppLayout({ children }) {
     { href: '/entrevistas', label: 'As minhas entrevistas', icon: 'entrevistas', badge: nConvites },
     { href: '/reunioes', label: 'Reuniões', icon: 'reunioes', badge: nConvocorias },
     { href: '/documentos', label: 'Documentos', icon: 'documentos' },
-    { href: '/equipa', label: 'Equipa', icon: 'equipa', soSuper: true },
+    { href: '/equipa', label: 'Equipa', icon: 'equipa' },
     { href: '/definicoes', label: 'Definições', icon: 'definicoes' },
   ]
     .filter((i) => !i.soSuper || pessoa.role === 'super_admin')
