@@ -4,6 +4,7 @@ import CartaoPalavraPasse from './CartaoPalavraPasse'
 import CartaoAparencia from './CartaoAparencia'
 import CartaoSessao from './CartaoSessao'
 import CartaoSeguranca from './CartaoSeguranca'
+import CartaoPasskeys from './CartaoPasskeys'
 
 export const metadata = { title: 'Definições' }
 
@@ -20,12 +21,17 @@ export default async function PaginaDefinicoes() {
   const { data: mfa } = await supabase.auth.mfa.listFactors()
   const fatores = mfa?.totp ?? []
 
+  // Passkeys (biometria) registadas nesta conta
+  const { data: passkeys } = await supabase.auth.passkey.list()
+  const dispositivos = passkeys ?? []
+
   const secoes = [
     { num: '01', titulo: 'Perfil', descricao: 'O nome aparece no dashboard, nas atividades e nos documentos que crias.', corpo: <CartaoPerfil pessoa={pessoa} /> },
     { num: '02', titulo: 'Segurança (2FA)', descricao: 'Verificação em dois passos via app autenticadora — pede um código para além da palavra-passe.', corpo: <CartaoSeguranca fatores={fatores} /> },
-    { num: '03', titulo: 'Palavra-passe', descricao: 'Ao alterar, as sessões noutros dispositivos são terminadas automaticamente.', corpo: <CartaoPalavraPasse /> },
-    { num: '04', titulo: 'Aparência', descricao: 'O tema é guardado neste dispositivo.', corpo: <CartaoAparencia /> },
-    { num: '05', titulo: 'Sessão', descricao: 'Termina a sessão neste dispositivo ou em todos os dispositivos onde a conta está ativa.', corpo: <CartaoSessao /> },
+    { num: '03', titulo: 'Biometria (entrar sem palavra-passe)', descricao: 'Regista este telemóvel ou computador para entrares com a impressão digital ou Face ID — e revoga dispositivos perdidos.', corpo: <CartaoPasskeys passkeysIniciais={dispositivos} /> },
+    { num: '04', titulo: 'Palavra-passe', descricao: 'Ao alterar, as sessões noutros dispositivos são terminadas automaticamente.', corpo: <CartaoPalavraPasse /> },
+    { num: '05', titulo: 'Aparência', descricao: 'O tema é guardado neste dispositivo.', corpo: <CartaoAparencia /> },
+    { num: '06', titulo: 'Sessão', descricao: 'Termina a sessão neste dispositivo ou em todos os dispositivos onde a conta está ativa.', corpo: <CartaoSessao /> },
   ]
 
   return (

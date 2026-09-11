@@ -1,8 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, LogIn } from 'lucide-react'
+import { Fingerprint, Loader2, LogIn } from 'lucide-react'
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
+
+function erroBiometria(error) {
+  const nome = error?.name ?? ''
+  if (nome === 'NotAllowedError') return null // cancelado pelo utilizador — silencioso
+  if (nome === 'SecurityError')
+    return 'O domínio atual não corresponde ao registo de biometria do projeto.'
+  if (error?.code === 'webauthn_credential_not_found')
+    return 'Este dispositivo não está registado em nenhuma conta — entra por email e registra-o nas Definições.'
+  return 'A biometria falhou — entra por email e palavra-passe.'
+}
 
 export default function FormLogin() {
   const router = useRouter()
@@ -10,6 +21,15 @@ export default function FormLogin() {
   const [password, setPassword] = useState('')
   const [erro, setErro] = useState(null)
   const [aCarregar, setACarregar] = useState(false)
+  const [aBiometria, setABiometria] = useState(false)
+  const [suporteBiometria, setSuporteBiometria] = useState(false)
+
+  useEffect(() => {
+    // Passkeys precisam de WebAuthn + contexto seguro (HTTPS, exceto localhost)
+    if (typeof window !== 'undefined' && window.isSecureContext) {
+      setSuporteBiometria(Boolean(window.PublicKeyCredential))
+    }
+  }, [])
 
   async function submeter(e) {
     e.preventDefault()
@@ -31,7 +51,7 @@ export default function FormLogin() {
       try {
         data = texto ? JSON.parse(texto) : null
       } catch {
-        // corpo não-JSON — logado abaixo
+        // corpo não-JSON — tratado abaixo
       }
 
       if (!res.ok) {
@@ -61,50 +81,103 @@ export default function FormLogin() {
     }
   }
 
+  async function entrarComBiometria() {
+    setErro(null)
+    setABiometria(true)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase.auth.signInWithPasskey()
+      if (error) {
+        const msg = erroBiometria(error)
+        if (msg) setErro(msg)
+        return
+      }
+
+      // Sessão criada. Carimbar o instante do login para o limite de 4h
+      // (o proxy expulsaria a sessão sem este cookie — ver /api/auth/sessao).
+      await fetch('/api/auth/sessao', { method: 'POST' }).catch(() => null)
+
+      // Se a conta tiver 2FA ativa, o proxy manda para /login/mfa —
+      // basta seguir para a app e deixar o middleware decidir.
+      router.replace('/')
+      router.refresh()
+    } catch (e) {
+      const msg = erroBiometria(e)
+      if (msg) setErro(msg)
+    } finally {
+      setABiometria(false)
+    }
+  }
+
   return (
-    <form onSubmit={submeter} className="space-y-5">
-      <div className="form-group">
-        <label className="form-label" htmlFor="email">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          autoComplete="email"
-          className="form-input"
-          placeholder="oteu.email@conhecafarmacia.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
+    <div className="space-y-5">
+      <form onSubmit={submeter} className="space-y-5">
+        <div className="form-group">
+          <label className="form-label" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            className="form-input"
+            placeholder="oteu.email@conhecafarmacia.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
 
-      <div className="form-group">
-        <label className="form-label" htmlFor="password">
-          Palavra-passe
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          className="form-input"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">
+            Palavra-passe
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            className="form-input"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
 
-      {erro && (
-        <p className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
-          {erro}
-        </p>
+        {erro && (
+          <p className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+            {erro}
+          </p>
+        )}
+
+        <button type="submit" disabled={aCarregar} className="btn btn-primary w-full">
+          {aCarregar ? <Loader2 className="animate-spin" size={18} /> : <LogIn size={18} />}
+          {aCarregar ? 'A entrar…' : 'Entrar'}
+        </button>
+      </form>
+
+      {suporteBiometria && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-brand-deep/35">
+            <span className="flex-1 border-t border-brand-divider" />
+            ou
+            <span className="flex-1 border-t border-brand-divider" />
+          </div>
+          <button
+            type="button"
+            onClick={entrarComBiometria}
+            disabled={aBiometria || aCarregar}
+            className="btn btn-secondary w-full"
+          >
+            {aBiometria ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Fingerprint size={18} />
+            )}
+            {aBiometria ? 'À espera da biometria…' : 'Entrar com biometria'}
+          </button>
+        </>
       )}
-
-      <button type="submit" disabled={aCarregar} className="btn btn-primary w-full">
-        {aCarregar ? <Loader2 className="animate-spin" size={18} /> : <LogIn size={18} />}
-        {aCarregar ? 'A entrar…' : 'Entrar'}
-      </button>
-    </form>
+    </div>
   )
 }

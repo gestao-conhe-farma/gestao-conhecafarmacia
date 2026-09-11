@@ -6,14 +6,92 @@ import { revalidatePath } from 'next/cache'
 import { registarEvento } from '@/lib/auditoria'
 
 // =============================================================
-// 2FA / TOTP — Activar, confirmar e desativar a segunda camada.
-// Usa o MFA TOTP nativo do Supabase Auth (supabase.auth.mfa.*).
+// Passkeys / biometria — gestão dos dispositivos registados.
+// O registo (cerimónia WebAuthn) corre no browser; aqui ficam as
+// ações de gestão que precisam de sessão no servidor.
 // =============================================================
+
+/** Mensagens amigáveis para os erros WebAuthn mais comuns. */
+function erroPasskey(error) {
+  const codigo = error?.code ?? error?.name ?? ''
+  if (codigo === 'webauthn_credential_exists')
+    return 'Este dispositivo já está registado nesta conta.'
+  if (codigo === 'NotAllowedError')
+    return 'Pedido de biometria cancelado ou expirado — tenta outra vez.'
+  if (codigo === 'InvalidStateError')
+    return 'Este dispositivo já tem um registo em curso — recarrega a página.'
+  if (codigo === 'SecurityError')
+    return 'O domínio atual não corresponde ao registo de biometria do projeto.'
+  return 'Não foi possível completar a operação de biometria. Tenta novamente.'
+}
+
+/**
+ * Renomeia um dispositivo/passkey da própria conta.
+ */
+export async function renomearPasskey(passkeyId, nome) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  if (!passkeyId) return { ok: false, erro: 'Dispositivo não identificado.' }
+
+  const nomeLimpo = (nome ?? '').trim().slice(0, 120)
+  if (!nomeLimpo) return { ok: false, erro: 'O nome não pode ficar vazio.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.passkey.update({
+    passkeyId,
+    friendlyName: nomeLimpo,
+  })
+  if (error) {
+    console.error('[definicoes] renomearPasskey', error.code ?? error.name, error.message)
+    return { ok: false, erro: erroPasskey(error) }
+  }
+
+  await registarEvento('passkey.renomeada', { passkey_id: passkeyId }, pessoa.id)
+  revalidatePath('/definicoes')
+  return { ok: true }
+}
+
+/**
+ * Elimina (revoga) um dispositivo/passkey da própria conta.
+ * Depois disto, ele deixa de conseguir iniciar sessão por biometria.
+ */
+export async function eliminarPasskey(passkeyId) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  if (!passkeyId) return { ok: false, erro: 'Dispositivo não identificado.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.passkey.delete({ passkeyId })
+  if (error) {
+    console.error('[definicoes] eliminarPasskey', error.code ?? error.name, error.message)
+    return { ok: false, erro: erroPasskey(error) }
+  }
+
+  await registarEvento('passkey.eliminada', { passkey_id: passkeyId }, pessoa.id)
+  revalidatePath('/definicoes')
+  return { ok: true }
+}
+
+/**
+ * Trilha de auditoria do registo — a cerimónia decorre no browser
+ * (registerPasskey), o evento é registado aqui via service_role.
+ */
+export async function registarEventoPasskey(passkeyId) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (!pessoa || !passkeyId) return { ok: false }
+  await registarEvento('passkey.registada', { passkey_id: passkeyId }, pessoa.id)
+  return { ok: true }
+}
 
 /**
  * Começa a ativação do 2FA: cria um fator TOTP pendente e devolve
  * o segredo + URI otpauth para gerar o QR no cliente.
  */
+// =============================================================
+// 2FA / TOTP — Activar, confirmar e desativar a segunda camada.
+// Usa o MFA TOTP nativo do Supabase Auth (supabase.auth.mfa.*).
+// =============================================================
+
 export async function iniciarAtivacao2FA() {
   const { pessoa } = await getUtilizadorAtual()
   if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
