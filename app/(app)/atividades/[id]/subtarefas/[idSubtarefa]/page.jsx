@@ -9,9 +9,11 @@ import AcoesDesconfirmarSubtarefa from './AcoesDesconfirmarSubtarefa'
 export const metadata = { title: 'Detalhe da subtarefa' }
 
 export default async function PaginaDetalheSubtarefa({ params }) {
-  const { id } = await params
+  // Rota: /atividades/[id]/subtarefas/[idSubtarefa] — o id da subtarefa
+  // vive em idSubtarefa (id é o da atividade-mãe).
+  const { idSubtarefa } = await params
   const { pessoa } = await getUtilizadorAtual()
-  const sub = await obterSubtarefa(id)
+  const sub = await obterSubtarefa(idSubtarefa)
   if (!sub) notFound()
 
   const ehSuper = pessoa.role === 'super_admin'
