@@ -85,8 +85,10 @@ export async function proxy(request) {
 
   // Limite absoluto: 4h desde o login, mesmo com atividade. Se o cookie
   // desapareceu (expirou no browser) ou é mais velho que 4h → fora.
+  // Tolerante aos dois formatos: ISO (atual) e epoch-ms (deploy anterior).
   if (user && !isPublic) {
-    const inicio = Date.parse(request.cookies.get(COOKIE_SESSAO)?.value ?? '')
+    const bruto = request.cookies.get(COOKIE_SESSAO)?.value
+    const inicio = /^\d+$/.test(bruto ?? '') ? Number(bruto) : Date.parse(bruto ?? '')
     if (Number.isNaN(inicio) || Date.now() - inicio > LIMITE_SESSAO_MS) {
       await supabase.auth.signOut()
       const url = request.nextUrl.clone()

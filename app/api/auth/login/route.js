@@ -104,8 +104,10 @@ export async function POST(request) {
 
     // Marca o instante do login: o proxy usa-o para aplicar o limite
     // absoluto de 4h (cookie httpOnly, desaparece sozinho em 4h).
+    // ISO, não milissegundos: o proxy lê com Date.parse — um número
+    // cru devolvia NaN e expulsava TODA a sessão em todos os pedidos.
     const resposta = NextResponse.json({ ok: true })
-    resposta.cookies.set('cf_sessao_inicio', String(Date.now()), {
+    resposta.cookies.set('cf_sessao_inicio', new Date().toISOString(), {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
