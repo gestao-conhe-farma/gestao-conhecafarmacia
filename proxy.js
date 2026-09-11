@@ -4,7 +4,19 @@ import { createServerClient } from '@supabase/ssr'
 /**
  * Proxy (middleware) do Next 16: renova a sessão Supabase em todas as rotas
  * e protege as páginas internas. Sem i18n aqui — a app de gestão é PT-only.
+ *
+ * Limite absoluto de sessão: 4 horas desde o login, mesmo com atividade.
+ * O instante do login vive no cookie httpOnly cf_sessao_inicio (definido em
+ * /api/auth/login, maxAge 4h). Quando falta ou está velho demais → fora.
  */
+const LIMITE_SESSAO_MS = 4 * 60 * 60 * 1000
+const COOKIE_SESSAO = 'cf_sessao_inicio'
+
+/** Copia os cookies (incl. remoções feitas pelo signOut) para a resposta final. */
+function copiarCookies(origem, destino) {
+  origem.cookies.getAll().forEach((c) => destino.cookies.set(c))
+}
+
 export async function proxy(request) {
   const { pathname } = request.nextUrl
 
@@ -66,7 +78,22 @@ export async function proxy(request) {
       await supabase.auth.signOut()
       const url = request.nextUrl.clone()
       url.pathname = '/login'
-      return NextResponse.redirect(url)
+      const res = NextResponse.redirect(url)
+      return copiarCookies(supabaseResponse, res)
+    }
+  }
+
+  // Limite absoluto: 4h desde o login, mesmo com atividade. Se o cookie
+  // desapareceu (expirou no browser) ou é mais velho que 4h → fora.
+  if (user && !isPublic) {
+    const inicio = Date.parse(request.cookies.get(COOKIE_SESSAO)?.value ?? '')
+    if (Number.isNaN(inicio) || Date.now() - inicio > LIMITE_SESSAO_MS) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('motivo', 'expirada')
+      const res = NextResponse.redirect(url)
+      return copiarCookies(supabaseResponse, res)
     }
   }
 

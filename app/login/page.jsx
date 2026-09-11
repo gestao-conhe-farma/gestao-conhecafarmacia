@@ -1,10 +1,13 @@
 import Link from 'next/link'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Clock } from 'lucide-react'
 import FormLogin from './FormLogin'
 
 export const metadata = { title: 'Entrar' }
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }) {
+  const params = await searchParams
+  const motivo = params?.motivo
+
   return (
     <div className="min-h-dvh grid lg:grid-cols-2 bg-brand-bg">
       {/* Painel estrutural escuro */}
@@ -58,6 +61,25 @@ export default function LoginPage() {
           </div>
 
           <FormLogin />
+
+          {motivo === 'inatividade' && (
+            <p className="mt-5 flex items-start gap-2.5 text-[13px] text-brand-deep/60 bg-brand-card border border-brand-divider rounded-xl px-4 py-3">
+              <Clock size={15} className="text-brand-accent shrink-0 mt-0.5" />
+              <span>
+                A tua sessão terminou por inatividade (30 minutos). Entra de novo
+                para continuar.
+              </span>
+            </p>
+          )}
+          {motivo === 'expirada' && (
+            <p className="mt-5 flex items-start gap-2.5 text-[13px] text-brand-deep/60 bg-brand-card border border-brand-divider rounded-xl px-4 py-3">
+              <Clock size={15} className="text-brand-accent shrink-0 mt-0.5" />
+              <span>
+                A tua sessão atingiu o limite de 4 horas. Entra de novo para
+                continuar.
+              </span>
+            </p>
+          )}
         </div>
       </div>
     </div>

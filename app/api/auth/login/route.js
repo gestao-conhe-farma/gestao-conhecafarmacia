@@ -55,7 +55,17 @@ export async function POST(request) {
       )
     }
 
-    return NextResponse.json({ ok: true })
+    // Marca o instante do login: o proxy usa-o para aplicar o limite
+    // absoluto de 4h (cookie httpOnly, desaparece sozinho em 4h).
+    const resposta = NextResponse.json({ ok: true })
+    resposta.cookies.set('cf_sessao_inicio', String(Date.now()), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 4 * 60 * 60,
+    })
+    return resposta
   } catch (errSupabase) {
     // Ex.: NEXT_PUBLIC_SUPABASE_URL/ANON_KEY em falta na Vercel, rede, etc.
     logErro('exceção no cliente Supabase', {

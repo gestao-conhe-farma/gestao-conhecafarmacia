@@ -6,6 +6,7 @@ import NavLateral from './NavLateral'
 import DrawerMobile from './DrawerMobile'
 import BotaoTema from './BotaoTema'
 import BotaoSair from './BotaoSair'
+import VigiaSessao from './VigiaSessao'
 
 export const metadata = { title: 'Início' }
 
@@ -57,6 +58,8 @@ export default async function AppLayout({ children }) {
 
   return (
     <div className="min-h-dvh bg-brand-bg-alt flex">
+      {/* Vigia de inatividade (30 min) — client-side, multi-tab */}
+      <VigiaSessao />
       {/* Sidebar estrutural — sempre escura, nos dois temas */}
       <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-sidebar sticky top-0 h-dvh">
         <div className="px-6 pt-7 pb-6">
