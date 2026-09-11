@@ -214,6 +214,36 @@ export async function confirmarParticipacao(atividadeId) {
   return { ok: true }
 }
 
+/** O convidado desfaz a própria confirmação de presença. */
+export async function desconfirmarParticipacao(atividadeId) {
+  const { pessoa } = await getUtilizadorAtual()
+
+  const supabase = await createClient()
+  const { data: registo } = await supabase
+    .from('entrevista_participantes')
+    .select('status')
+    .eq('atividade_id', atividadeId)
+    .eq('pessoa_id', pessoa.id)
+    .single()
+
+  if (!registo) return { ok: false, erro: 'Não foste convidado para esta entrevista.' }
+  if (registo.status !== 'confirmado') {
+    return { ok: false, erro: 'Ainda não confirmaste presença.' }
+  }
+
+  const { error } = await supabase
+    .from('entrevista_participantes')
+    .update({ status: 'convidado' })
+    .eq('atividade_id', atividadeId)
+    .eq('pessoa_id', pessoa.id)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath('/')
+  revalidatePath('/entrevistas')
+  revalidatePath(`/atividades/${atividadeId}`)
+  return { ok: true }
+}
+
 /**
  * Marcar evento como concluído — sempre manual, só super_admin.
  * Regista a audiência real (publico_real) para comparar com a esperada.

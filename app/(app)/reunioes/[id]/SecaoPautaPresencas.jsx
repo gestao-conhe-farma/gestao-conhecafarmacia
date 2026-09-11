@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { CalendarCheck, Check, Loader2, UserPlus, UserMinus, X } from 'lucide-react'
-import { confirmarPresencaReuniao, marcarPresenca, convocarParticipantes, removerParticipante } from '../actions'
+import { CalendarCheck, CalendarX, Check, Loader2, UserPlus, UserMinus, X } from 'lucide-react'
+import { confirmarPresencaReuniao, desconfirmarPresencaReuniao, marcarPresenca, convocarParticipantes, removerParticipante } from '../actions'
 import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 const PRESENCAS = [
@@ -44,6 +44,24 @@ export default function SecaoPautaPresencas({
     } finally {
       setAProcessar(null)
     }
+  }
+
+  function pedirDesconfirmar() {
+    return pedirConfirmacao({
+      titulo: 'Desconfirmar a tua presença?',
+      descricao: 'Voltas a ficar como “aguarda confirmação”. Podes confirmar de novo a qualquer momento antes da reunião.',
+      confirmarTxt: 'Desconfirmar',
+      perigoso: true,
+    }).then(async (ok) => {
+      if (!ok) return
+      setAProcessar('eu')
+      try {
+        await desconfirmarPresencaReuniao(reuniaoId)
+        router.refresh()
+      } finally {
+        setAProcessar(null)
+      }
+    })
   }
 
   async function marcar(pessoaId, valor) {
@@ -120,11 +138,17 @@ export default function SecaoPautaPresencas({
           <p className="mt-4 text-sm text-brand-deep/45 italic">Sem pauta definida.</p>
         )}
 
-        {/* Ação própria: confirmar presença */}
+        {/* Ação própria: confirmar / desconfirmar presença */}
         {meuConvite?.status === 'convidado' && estado === 'agendada' && (
           <button onClick={confirmar} disabled={aProcessar === 'eu'} className="btn btn-accent btn-small mt-5">
             {aProcessar === 'eu' ? <Loader2 size={14} className="animate-spin" /> : <CalendarCheck size={14} />}
             Confirmar a minha presença
+          </button>
+        )}
+        {meuConvite?.status === 'confirmado' && estado === 'agendada' && (
+          <button onClick={pedirDesconfirmar} disabled={aProcessar === 'eu'} className="btn btn-secondary btn-small mt-5">
+            {aProcessar === 'eu' ? <Loader2 size={14} className="animate-spin" /> : <CalendarX size={14} />}
+            Desconfirmar a minha presença
           </button>
         )}
 
@@ -159,7 +183,6 @@ export default function SecaoPautaPresencas({
                 {meu && p.status === 'convidado' && estado === 'agendada' && (
                   <span className="text-xs text-brand-accent font-semibold">Aguarda a tua confirmação</span>
                 )}
-
                 {/* Retirar convite (superadmin, antes de presença/ata) */}
                 {ehSuper && !meu && estado === 'agendada' && !p.presenca && (
                   <button

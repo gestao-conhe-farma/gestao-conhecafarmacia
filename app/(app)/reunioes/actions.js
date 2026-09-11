@@ -283,6 +283,42 @@ export async function confirmarPresencaReuniao(reuniaoId) {
   return { ok: true }
 }
 
+/**
+ * O convocado desfaz a própria confirmação (antes da reunião).
+ * A presença tem de estar por marcar — depois disso, só a coordenação
+ * mexe nos registos de presença.
+ */
+export async function desconfirmarPresencaReuniao(reuniaoId) {
+  const { pessoa } = await getUtilizadorAtual()
+
+  const supabase = await createClient()
+  const { data: registo } = await supabase
+    .from('reuniao_participantes')
+    .select('status, presenca')
+    .eq('reuniao_id', reuniaoId)
+    .eq('pessoa_id', pessoa.id)
+    .single()
+
+  if (!registo) return { ok: false, erro: 'Não estás convocado para esta reunião.' }
+  if (registo.presenca) {
+    return { ok: false, erro: 'A tua presença já foi registada pela coordenação — fala com eles.' }
+  }
+  if (registo.status !== 'confirmado') {
+    return { ok: false, erro: 'Ainda não confirmaste presença.' }
+  }
+
+  const { error } = await supabase
+    .from('reuniao_participantes')
+    .update({ status: 'convidado' })
+    .eq('reuniao_id', reuniaoId)
+    .eq('pessoa_id', pessoa.id)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath(`/reunioes/${reuniaoId}`)
+  revalidatePath('/reunioes')
+  return { ok: true }
+}
+
 /** Marcar presença (presente/ausente/justificado) — super_admin, após a reunião. */
 export async function marcarPresenca(reuniaoId, pessoaId, presenca) {
   const { pessoa } = await getUtilizadorAtual()

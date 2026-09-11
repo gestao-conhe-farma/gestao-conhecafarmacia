@@ -2,16 +2,29 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Plus } from 'lucide-react'
-import { criarSubtarefa } from '../subtarefas-actions'
+import { Loader2, Plus, Save } from 'lucide-react'
+import { criarSubtarefa, editarSubtarefa } from '../subtarefas-actions'
 
-export default function FormSubtarefaInline({ atividadeId, equipa }) {
+/**
+ * Formulário de subtarefa, em dois modos:
+ * - criação (fechado até clicar "Adicionar subtarefa")
+ * - edição (recebe `subtarefa` e parte já aberto, com dados preenchidos)
+ */
+export default function FormSubtarefaInline({ atividadeId, equipa, subtarefa = null, aoTerminar }) {
+  const emEdicao = Boolean(subtarefa)
   const router = useRouter()
-  const [aberto, setAberto] = useState(false)
-  const [titulo, setTitulo] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [prazo, setPrazo] = useState('')
-  const [responsaveis, setResponsaveis] = useState([])
+  const [aberto, setAberto] = useState(emEdicao)
+  const [titulo, setTitulo] = useState(subtarefa?.titulo ?? '')
+  const [descricao, setDescricao] = useState(subtarefa?.descricao ?? '')
+  const [prazo, setPrazo] = useState(() => {
+    if (!subtarefa?.prazo) return ''
+    const d = new Date(subtarefa.prazo)
+    const pad = (n) => n.toString().padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  })
+  const [responsaveis, setResponsaveis] = useState(
+    subtarefa?.subtarefa_responsaveis?.map((r) => r.pessoa_id) ?? []
+  )
   const [aCarregar, setACarregar] = useState(false)
   const [erro, setErro] = useState(null)
 
@@ -20,29 +33,40 @@ export default function FormSubtarefaInline({ atividadeId, equipa }) {
     setErro(null)
     setACarregar(true)
     try {
-      const r = await criarSubtarefa({
-        atividadeId,
-        titulo,
-        descricao,
-        prazo: prazo || null,
-        responsaveis,
-      })
+      const r = emEdicao
+        ? await editarSubtarefa(subtarefa.id, {
+            titulo,
+            descricao,
+            prazo: prazo || null,
+            responsaveis,
+          })
+        : await criarSubtarefa({
+            atividadeId,
+            titulo,
+            descricao,
+            prazo: prazo || null,
+            responsaveis,
+          })
       if (!r.ok) {
         setErro(r.erro)
         return
       }
-      setTitulo('')
-      setDescricao('')
-      setPrazo('')
-      setResponsaveis([])
-      setAberto(false)
+      if (!emEdicao) {
+        setTitulo('')
+        setDescricao('')
+        setPrazo('')
+        setResponsaveis([])
+        setAberto(false)
+      }
+      aoTerminar?.()
       router.refresh()
     } finally {
       setACarregar(false)
     }
   }
 
-  if (!aberto) {
+  // Modo criação: fechado até pedir
+  if (!emEdicao && !aberto) {
     return (
       <button onClick={() => setAberto(true)} className="btn btn-secondary">
         <Plus size={16} />
@@ -52,7 +76,7 @@ export default function FormSubtarefaInline({ atividadeId, equipa }) {
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} className={emEdicao ? 'w-full space-y-4' : 'space-y-4'}>
       <div className="form-group">
         <label className="form-label">Título</label>
         <input
@@ -117,10 +141,14 @@ export default function FormSubtarefaInline({ atividadeId, equipa }) {
 
       <div className="flex gap-2">
         <button type="submit" disabled={aCarregar} className="btn btn-primary btn-small">
-          {aCarregar ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}
-          {aCarregar ? 'A criar…' : 'Criar subtarefa'}
+          {aCarregar ? <Loader2 className="animate-spin" size={15} /> : emEdicao ? <Save size={15} /> : <Plus size={15} />}
+          {aCarregar ? 'A guardar…' : emEdicao ? 'Guardar alterações' : 'Criar subtarefa'}
         </button>
-        <button type="button" onClick={() => setAberto(false)} className="btn btn-secondary btn-small">
+        <button
+          type="button"
+          onClick={() => (emEdicao ? aoTerminar?.() : setAberto(false))}
+          className="btn btn-secondary btn-small"
+        >
           Cancelar
         </button>
       </div>

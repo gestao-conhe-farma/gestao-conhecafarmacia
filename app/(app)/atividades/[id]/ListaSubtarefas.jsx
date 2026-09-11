@@ -2,12 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, Loader2, CheckCircle2 } from 'lucide-react'
+import { Check, Loader2, Pencil, RotateCcw, Trash2, X, CheckCircle2, MessageSquareWarning } from 'lucide-react'
 import {
   aprovarSubtarefa,
   rejeitarSubtarefa,
   concluirSubtarefa,
+  eliminarSubtarefa,
+  retratarRecusaSubtarefa,
 } from '../subtarefas-actions'
+import FormSubtarefaInline from './FormSubtarefaInline'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 const ROTULOS = {
   pendente_aprovacao: { label: 'Pendente', cls: 'badge-status-pendente', dot: 'bg-amber-500' },
@@ -16,9 +20,14 @@ const ROTULOS = {
   concluida: { label: 'Concluída', cls: 'badge-status-concluida', dot: 'bg-brand-primary' },
 }
 
-export default function ListaSubtarefas({ subtarefas, ehSuper, pessoaAtualId }) {
+export default function ListaSubtarefas({ atividadeId, subtarefas, equipa = [], ehSuper, pessoaAtualId }) {
   const router = useRouter()
   const [aProcessar, setAProcessar] = useState(null)
+  const [emEdicao, setEmEdicao] = useState(null)
+  const [aRecusar, setARecusar] = useState(null) // id da subtarefa em recusa
+  const [motivo, setMotivo] = useState('')
+  const [erroRecusa, setErroRecusa] = useState(null)
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   async function executar(fn, id) {
     setAProcessar(id)
@@ -30,6 +39,66 @@ export default function ListaSubtarefas({ subtarefas, ehSuper, pessoaAtualId }) 
     }
   }
 
+  function pedirEliminar(s) {
+    return pedirConfirmacao({
+      titulo: `Eliminar “${s.titulo}”?`,
+      descricao:
+        'A subtarefa desaparece com os seus responsáveis e histórico. Esta ação não pode ser anulada.',
+      confirmarTxt: 'Eliminar',
+      perigoso: true,
+    }).then(async (ok) => {
+      if (!ok) return
+      await executar(eliminarSubtarefa, s.id)
+    })
+  }
+
+  function pedirRecusar(s) {
+    // Caixa de texto obrigatória: o motivo fica guardado mas só a
+    // coordenação (super_admin) o pode ler — RLS na tabela subtarefa_recusas.
+    return pedirConfirmacao({
+      titulo: `Recusar “${s.titulo}”?`,
+      descricao: 'O criador verá que a tarefa foi recusada, mas o motivo fica visível apenas para a coordenação.',
+      confirmarTxt: 'Recusar tarefa',
+      perigoso: true,
+      extra: (
+        <div className="mt-1">
+          <label className="form-label">Motivo da recusa (obrigatório)</label>
+          <textarea
+            className="form-textarea"
+            rows={3}
+            autoFocus
+            placeholder="Ex.: fora do âmbito desta atividade; já coberta pela tarefa X…"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+          />
+          {erroRecusa && (
+            <p className="text-sm text-red-600 mt-2">{erroRecusa}</p>
+          )}
+        </div>
+      ),
+    }).then(async (ok) => {
+      if (!ok) return
+      const texto = motivo.trim()
+      if (!texto) {
+        setErroRecusa('Explica o motivo da recusa — é obrigatório.')
+        return
+      }
+      setAProcessar(s.id)
+      try {
+        const r = await rejeitarSubtarefa(s.id, texto)
+        if (!r.ok) {
+          setErroRecusa(r.erro)
+          return
+        }
+        setMotivo('')
+        setErroRecusa(null)
+        router.refresh()
+      } finally {
+        setAProcessar(null)
+      }
+    })
+  }
+
   if (subtarefas.length === 0) {
     return (
       <p className="text-sm text-brand-deep/50 py-2">
@@ -39,83 +108,145 @@ export default function ListaSubtarefas({ subtarefas, ehSuper, pessoaAtualId }) 
   }
 
   return (
-    <ul className="border-t border-brand-divider">
-      {subtarefas.map((s) => {
-        const responsaveis = s.subtarefa_responsaveis?.map((r) => r.pessoas?.nome) ?? []
-        const possoConcluir =
-          s.status === 'aprovada' &&
-          (ehSuper || s.criado_por === pessoaAtualId ||
-            s.subtarefa_responsaveis?.some((r) => r.pessoa_id === pessoaAtualId))
-        const info = ROTULOS[s.status]
+    <>
+      <ul className="border-t border-brand-divider">
+        {subtarefas.map((s) => {
+          const responsaveis = s.subtarefa_responsaveis?.map((r) => r.pessoas?.nome) ?? []
+          const possoConcluir =
+            s.status === 'aprovada' &&
+            (ehSuper || s.criado_por === pessoaAtualId ||
+              s.subtarefa_responsaveis?.some((r) => r.pessoa_id === pessoaAtualId))
+          const possoEditar =
+            ehSuper || (s.criado_por === pessoaAtualId && s.status === 'pendente_aprovacao')
+          const emEdicaoAgora = emEdicao === s.id
+          const info = ROTULOS[s.status]
 
-        return (
-          <li key={s.id} className="py-4 border-b border-brand-divider">
-            <div className="flex items-start gap-3">
-              {/* Dot de estado */}
-              <span className={`w-2 h-2 rounded-full mt-2 shrink-0 ${info.dot}`} aria-hidden="true" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className={`font-semibold text-brand-deep ${s.status === 'concluida' ? 'line-through opacity-60' : ''}`}>
-                    {s.titulo}
-                  </p>
-                  <span className={`badge ${info.cls}`}>{info.label}</span>
-                  {s.status !== 'concluida' && s.prazo && new Date(s.prazo) < new Date() && (
-                    <span className="badge bg-red-500/10 text-red-600">Em atraso</span>
-                  )}
-                </div>
-                {s.descricao && (
-                  <p className="text-sm text-brand-deep/60 mt-1">{s.descricao}</p>
-                )}
-                <p className="text-xs text-brand-deep/45 mt-1.5">
-                  Criada por {s.criado_por?.nome}
-                  {s.prazo && ` · prazo ${formatarDataSegura(s.prazo)}`}
-                  {responsaveis.length > 0 && ` · resp. ${responsaveis.join(', ')}`}
-                  {s.status === 'rejeitada' && s.aprovado_por && ` · rejeitada por ${s.aprovado_por?.nome}`}
-                </p>
-              </div>
+          return (
+            <li key={s.id} className="py-4 border-b border-brand-divider">
+              {emEdicaoAgora ? (
+                <FormSubtarefaInline
+                  atividadeId={atividadeId}
+                  equipa={equipa}
+                  subtarefa={s}
+                  aoTerminar={() => setEmEdicao(null)}
+                />
+              ) : (
+                <div className="flex items-start gap-3">
+                  {/* Dot de estado */}
+                  <span className={`w-2 h-2 rounded-full mt-2 shrink-0 ${info.dot}`} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className={`font-semibold text-brand-deep ${s.status === 'concluida' ? 'line-through opacity-60' : ''}`}>
+                        {s.titulo}
+                      </p>
+                      <span className={`badge ${info.cls}`}>{info.label}</span>
+                      {s.status !== 'concluida' && s.prazo && new Date(s.prazo) < new Date() && (
+                        <span className="badge bg-red-500/10 text-red-600">Em atraso</span>
+                      )}
+                    </div>
+                    {s.descricao && (
+                      <p className="text-sm text-brand-deep/60 mt-1">{s.descricao}</p>
+                    )}
+                    <p className="text-xs text-brand-deep/45 mt-1.5">
+                      Criada por {s.criado_por?.nome}
+                      {s.prazo && ` · prazo ${formatarDataSegura(s.prazo)}`}
+                      {responsaveis.length > 0 && ` · resp. ${responsaveis.join(', ')}`}
+                      {s.status === 'rejeitada' && s.aprovado_por && ` · rejeitada por ${s.aprovado_por?.nome}`}
+                    </p>
 
-              {/* Ações */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                {aProcessar === s.id ? (
-                  <Loader2 size={18} className="animate-spin text-brand-accent" />
-                ) : (
-                  <>
-                    {ehSuper && s.status === 'pendente_aprovacao' && (
+                    {/* Motivo da recusa — confidencial, só super_admin */}
+                    {ehSuper && s.status === 'rejeitada' && s.motivo_recusa?.[0]?.motivo && (
+                      <div className="mt-2.5 flex items-start gap-2 rounded-lg bg-amber-500/[0.07] border border-amber-500/20 px-3 py-2.5">
+                        <MessageSquareWarning size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
+                            Motivo da recusa · confidencial
+                          </p>
+                          <p className="text-sm text-brand-deep/80 mt-0.5 whitespace-pre-line">
+                            {s.motivo_recusa[0].motivo}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {aProcessar === s.id ? (
+                      <Loader2 size={18} className="animate-spin text-brand-accent" />
+                    ) : (
                       <>
-                        <button
-                          title="Aprovar"
-                          onClick={() => executar(aprovarSubtarefa, s.id)}
-                          className="w-8 h-8 grid place-items-center rounded-lg bg-brand-accent/10 text-brand-accent hover:bg-brand-accent hover:text-white transition-colors"
-                        >
-                          <Check size={15} />
-                        </button>
-                        <button
-                          title="Rejeitar"
-                          onClick={() => executar(rejeitarSubtarefa, s.id)}
-                          className="w-8 h-8 grid place-items-center rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white transition-colors"
-                        >
-                          <X size={15} />
-                        </button>
+                        {ehSuper && s.status === 'pendente_aprovacao' && (
+                          <>
+                            <button
+                              title="Aprovar"
+                              onClick={() => executar(aprovarSubtarefa, s.id)}
+                              className="w-8 h-8 grid place-items-center rounded-lg bg-brand-accent/10 text-brand-accent hover:bg-brand-accent hover:text-white transition-colors"
+                            >
+                              <Check size={15} />
+                            </button>
+                            <button
+                              title="Recusar (motivo obrigatório)"
+                              onClick={() => pedirRecusar(s)}
+                              className="w-8 h-8 grid place-items-center rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white transition-colors"
+                            >
+                              <X size={15} />
+                            </button>
+                          </>
+                        )}
+                        {possoConcluir && (
+                          <button
+                            title="Marcar como concluída"
+                            onClick={() => executar(concluirSubtarefa, s.id)}
+                            className="w-8 h-8 grid place-items-center rounded-lg bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white transition-colors"
+                          >
+                            <CheckCircle2 size={15} />
+                          </button>
+                        )}
+                        {possoEditar && (
+                          <button
+                            title="Editar"
+                            onClick={() => setEmEdicao(s.id)}
+                            className="w-8 h-8 grid place-items-center rounded-lg text-brand-deep/45 hover:text-brand-primary hover:bg-brand-bg-alt transition-colors"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        )}
+                        {ehSuper && s.status === 'rejeitada' && (
+                          <button
+                            title="Reverter recusa — volta a aprovação"
+                            onClick={() => executar(retratarRecusaSubtarefa, s.id)}
+                            className="w-8 h-8 grid place-items-center rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
+                          >
+                            <RotateCcw size={15} />
+                          </button>
+                        )}
+                        {possoApagar(s, ehSuper, pessoaAtualId) && (
+                          <button
+                            title="Eliminar"
+                            onClick={() => pedirEliminar(s)}
+                            className="w-8 h-8 grid place-items-center rounded-lg text-red-500/60 hover:text-red-600 hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
                       </>
                     )}
-                    {possoConcluir && (
-                      <button
-                        title="Marcar como concluída"
-                        onClick={() => executar(concluirSubtarefa, s.id)}
-                        className="w-8 h-8 grid place-items-center rounded-lg bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white transition-colors"
-                      >
-                        <CheckCircle2 size={15} />
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </li>
-        )
-      })}
-    </ul>
+                  </div>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+
+      {caixaConfirmacao}
+    </>
   )
+}
+
+function possoApagar(s, ehSuper, pessoaAtualId) {
+  return ehSuper || (s.criado_por === pessoaAtualId && s.status === 'pendente_aprovacao')
 }
 
 function formatarDataSegura(v) {

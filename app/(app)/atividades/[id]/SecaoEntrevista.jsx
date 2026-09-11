@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarCheck, Check, Loader2, UserPlus } from 'lucide-react'
-import { confirmarParticipacao, convidarParticipantes } from '../actions'
+import { CalendarCheck, CalendarX, Check, Loader2, UserPlus } from 'lucide-react'
+import { confirmarParticipacao, desconfirmarParticipacao, convidarParticipantes } from '../actions'
+import { useConfirmacao } from '@/components/CaixaConfirmacao'
 
 export default function SecaoEntrevista({
   atividadeId,
@@ -18,6 +19,7 @@ export default function SecaoEntrevista({
   const [aProcessar, setAProcessar] = useState(false)
   const [modoConvidar, setModoConvidar] = useState(false)
   const [selecionadas, setSelecionadas] = useState([])
+  const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   const convidadosIds = participantes.map((p) => p.pessoa_id)
   const disponiveis = equipa.filter((p) => !convidadosIds.includes(p.id))
@@ -30,6 +32,24 @@ export default function SecaoEntrevista({
     } finally {
       setAProcessar(false)
     }
+  }
+
+  function pedirDesconfirmar() {
+    return pedirConfirmacao({
+      titulo: 'Desconfirmar a tua presença?',
+      descricao: 'Voltas a ficar como “convidado”. Podes confirmar de novo a qualquer momento.',
+      confirmarTxt: 'Desconfirmar',
+      perigoso: true,
+    }).then(async (ok) => {
+      if (!ok) return
+      setAProcessar(true)
+      try {
+        await desconfirmarParticipacao(atividadeId)
+        router.refresh()
+      } finally {
+        setAProcessar(false)
+      }
+    })
   }
 
   async function convidar() {
@@ -61,9 +81,15 @@ export default function SecaoEntrevista({
               </button>
             )}
             {meuConvite?.status === 'confirmado' && (
-              <span className="badge badge-status-confirmado">
-                <Check size={12} /> Presença confirmada
-              </span>
+              <>
+                <span className="badge badge-status-confirmado">
+                  <Check size={12} /> Presença confirmada
+                </span>
+                <button onClick={pedirDesconfirmar} disabled={aProcessar} className="btn btn-secondary btn-small">
+                  {aProcessar ? <Loader2 size={14} className="animate-spin" /> : <CalendarX size={14} />}
+                  Desconfirmar
+                </button>
+              </>
             )}
             {ehSuper && (
               <button
@@ -152,6 +178,8 @@ export default function SecaoEntrevista({
         </ul>
       )}
       </div>
+
+      {caixaConfirmacao}
     </section>
   )
 }

@@ -219,6 +219,7 @@ export default async function PaginaAtividade({ params }) {
             <ListaSubtarefas
               atividadeId={id}
               subtarefas={subtarefas}
+              equipa={equipa}
               ehSuper={ehSuper}
               pessoaAtualId={pessoa.id}
             />

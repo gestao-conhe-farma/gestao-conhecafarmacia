@@ -57,6 +57,7 @@ function CaixaConfirmacao({ opcoes, fechar }) {
     confirmarTxt = 'Confirmar',
     cancelarTxt = 'Cancelar',
     perigoso = false,
+    extra = null, // nó React opcional (ex.: caixa de texto obrigatória)
   } = opcoes
 
   useEffect(() => {
@@ -111,6 +112,7 @@ function CaixaConfirmacao({ opcoes, fechar }) {
               {descricao && (
                 <p className="text-sm text-brand-deep/60 mt-1.5 leading-relaxed">{descricao}</p>
               )}
+              {extra}
             </div>
           </div>
         </div>
