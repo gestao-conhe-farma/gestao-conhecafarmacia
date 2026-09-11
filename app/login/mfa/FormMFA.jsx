@@ -1,11 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Loader2, ShieldCheck } from 'lucide-react'
 
 export default function FormMFA({ factorId }) {
-  const router = useRouter()
   const [codigo, setCodigo] = useState('')
   const [erro, setErro] = useState(null)
   const [aProcessar, setAProcessar] = useState(false)
@@ -29,8 +27,13 @@ export default function FormMFA({ factorId }) {
         return
       }
 
-      router.replace('/')
-      router.refresh()
+      // Navegação DURA: o estado de sessão acabou de mudar (aal1 → aal2)
+      // e router.replace + router.refresh no mesmo tique fazem duas
+      // navegações concorrentes com a cache do router cheia de páginas
+      // antigas — o ecrã ficava preso em /login/mfa ou negro até a
+      // pessoa atualizar à mão. Uma carga nova de documento reavalia o
+      // middleware com os cookies frescos e destrói a cache velha.
+      window.location.replace('/')
     } catch {
       setErro('Erro de rede — tenta novamente.')
     } finally {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Fingerprint, Loader2, LogIn } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 
@@ -18,7 +17,6 @@ function erroBiometria(error) {
 }
 
 export default function FormLogin() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [erro, setErro] = useState(null)
@@ -73,8 +71,9 @@ export default function FormLogin() {
         return
       }
 
-      router.replace('/')
-      router.refresh()
+      // Navegação DURA: ver nota em entrarComBiometria — evita ecrã
+      // negro/preso por navegação client-side com cache velha.
+      window.location.replace('/')
     } catch (errRede) {
       // Falha real de rede / DNS / abort — quase nunca acontece.
       setErro(`Erro de rede: ${errRede?.message ?? 'desconhecido'}`)
@@ -101,8 +100,12 @@ export default function FormLogin() {
 
       // Se a conta tiver 2FA ativa, o proxy manda para /login/mfa —
       // basta seguir para a app e deixar o middleware decidir.
-      router.replace('/')
-      router.refresh()
+      //
+      // Navegação DURA (não router.replace): o estado de sessão acabou
+      // de nascer e a cache do router ainda guarda páginas da sessão
+      // anterior — navegação client-side aqui deixava o dashboard negro
+      // até a pessoa atualizar à mão (reproduzido 3× em mobile).
+      window.location.replace('/')
     } catch (e) {
       const msg = erroBiometria(e)
       if (msg) setErro(msg)
