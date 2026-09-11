@@ -2,7 +2,8 @@
 
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { BUCKET } from '@/lib/documentos'
+import { BUCKET, MIME_ACEITES, EXT_PROIBIDAS, TAMANHO_MAX_BYTES } from '@/lib/documentos'
+import { registarEvento } from '@/lib/auditoria'
 
 /**
  * Regista os metadados do documento depois do upload do ficheiro
@@ -14,12 +15,39 @@ export async function registarDocumento(payload) {
     return { ok: false, erro: 'Apenas a coordenação pode adicionar documentos.' }
   }
 
+  const supabase = await createClient()
+
   const { titulo, descricao, categoriaId, codigo, storagePath, nomeFicheiro, mimeType, tamanhoBytes, restrito } = payload
   if (!titulo?.trim() || !storagePath || !nomeFicheiro) {
     return { ok: false, erro: 'Título e ficheiro são obrigatórios.' }
   }
 
-  const supabase = await createClient()
+  // Validação SERVER-SIDE do ficheiro: mimeType/tamanho vinham do browser
+  // e podiam mentir. Extensões executáveis/ativas (html, svg, js) são
+  // proibidas — quem precisa de partilhar HTML exporta para PDF.
+  const ext = '.' + (nomeFicheiro.split('.').pop() || '').toLowerCase()
+  if (EXT_PROIBIDAS.includes(ext)) {
+    return { ok: false, erro: `Ficheiros ${ext} não são permitidos — exporta para PDF.` }
+  }
+  if (mimeType && !MIME_ACEITES.includes(mimeType)) {
+    return { ok: false, erro: 'Tipo de ficheiro não suportado.' }
+  }
+  if (tamanhoBytes && Number(tamanhoBytes) > TAMANHO_MAX_BYTES) {
+    return { ok: false, erro: `Ficheiro demasiado grande (máx. ${TAMANHO_MAX_BYTES / (1024 * 1024)} MB).` }
+  }
+
+  // O ficheiro tem de existir no bucket sob o path indicado — impede
+  // registos fantasma que apontem para paths de outros documentos.
+  const pasta = storagePath.split('/').slice(0, -1).join('/')
+  const nomeNoBucket = storagePath.split('/').pop()
+  const { data: objetos, error: erroObjeto } = await supabase.storage
+    .from(BUCKET)
+    .list(pasta, { search: nomeNoBucket, limit: 100 })
+  const ficheiroExiste = objetos?.some((o) => o.name === nomeNoBucket)
+  if (erroObjeto || !ficheiroExiste) {
+    return { ok: false, erro: 'Ficheiro não encontrado no armazenamento — volta a carregá-lo.' }
+  }
+
   const { data, error } = await supabase
     .from('documentos')
     .insert({
@@ -39,6 +67,8 @@ export async function registarDocumento(payload) {
 
   if (error) return { ok: false, erro: error.message }
 
+  await registarEvento('documento.criado', { documento_id: data.id, titulo: titulo.trim() }, pessoa.id)
+
   revalidatePath('/documentos')
   return { ok: true, id: data.id }
 }
@@ -54,7 +84,7 @@ export async function eliminarDocumento(documentoId) {
 
   const { data: doc } = await supabase
     .from('documentos')
-    .select('storage_path')
+    .select('storage_path, titulo')
     .eq('id', documentoId)
     .single()
 
@@ -68,6 +98,8 @@ export async function eliminarDocumento(documentoId) {
   if (erroStorage) {
     console.error('[documentos] falha ao remover ficheiro', doc.storage_path, erroStorage.message)
   }
+
+  await registarEvento('documento.eliminado', { documento_id: documentoId, titulo: doc.titulo }, pessoa.id)
 
   revalidatePath('/documentos')
   return { ok: true }

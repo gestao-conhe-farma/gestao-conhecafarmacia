@@ -35,41 +35,26 @@ export default function FormLogin() {
       }
 
       if (!res.ok) {
-        console.group(
-          `%c[login] falha ${res.status} ${res.statusText}`,
-          'color:#dc2626;font-weight:bold'
-        )
-        console.log('URL:', res.url)
-        console.log('Content-Type:', res.headers.get('content-type'))
-        console.log('Corpo:', data ?? texto?.slice(0, 500))
-        if (data && typeof data === 'object') {
-          const { erro, detalhe, ...resto } = data
-          if (detalhe) console.warn('Detalhe do servidor:', detalhe)
-          if (Object.keys(resto).length) console.log('Outros campos:', resto)
-        }
-        console.groupEnd()
-
+        // Sem debug na consola: o corpo podia incluir o email tentado e
+        // detalhes internos — fica só a mensagem amigável na UI.
         setErro(
           data?.erro ||
             (data
-              ? 'Resposta inesperada do servidor. Abre a consola (F12) para detalhes.'
-              : `Resposta não-JSON do servidor (HTTP ${res.status}). Abre a consola (F12) para detalhes.`)
+              ? 'Resposta inesperada do servidor. Tenta novamente.'
+              : `Erro do servidor (HTTP ${res.status}). Tenta novamente.`)
         )
         return
       }
 
       if (!data?.ok) {
-        console.warn('[login] resposta 200 sem {ok:true}:', data ?? texto)
-        setErro('Resposta inesperada do servidor. Abre a consola (F12) para detalhes.')
+        setErro('Resposta inesperada do servidor. Tenta novamente.')
         return
       }
 
       router.replace('/')
       router.refresh()
     } catch (errRede) {
-      // Falha real de rede / DNS / abort — quase nunca acontece depois do
-      // fix do redirect do proxy, mas fica logado na mesma.
-      console.error('[login] exceção no fetch:', errRede)
+      // Falha real de rede / DNS / abort — quase nunca acontece.
       setErro(`Erro de rede: ${errRede?.message ?? 'desconhecido'}`)
     } finally {
       setACarregar(false)

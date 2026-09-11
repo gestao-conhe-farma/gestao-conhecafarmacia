@@ -3,6 +3,7 @@
 import { createAdminClient, createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { normalizarNumero, validarNumeroE164 } from '@/lib/contactos'
+import { registarEvento } from '@/lib/auditoria'
 
 /**
  * Criar conta de membro da equipa (só super_admin).
@@ -47,6 +48,8 @@ export async function criarConta({ nome, email, password, role }) {
         .eq('id', existente.id)
       if (error) return { ok: false, erro: error.message }
 
+      await registarEvento('conta.reativada', { pessoa_id: existente.id, email: emailLimpo, role }, pessoa.id)
+
       revalidatePath('/equipa')
       return { ok: true, reativada: true }
     }
@@ -81,6 +84,8 @@ export async function criarConta({ nome, email, password, role }) {
     return { ok: false, erro: 'Falha ao registar: ' + erroPessoa.message }
   }
 
+  await registarEvento('conta.criada', { pessoa_id: data.user.id, email: emailLimpo, role }, pessoa.id)
+
   revalidatePath('/equipa')
   return { ok: true }
 }
@@ -98,6 +103,9 @@ export async function alterarRole(pessoaId, novoRole) {
   const { error } = await admin.from('pessoas').update({ role: novoRole }).eq('id', pessoaId)
 
   if (error) return { ok: false, erro: error.message }
+
+  await registarEvento('papel.alterado', { pessoa_id: pessoaId, papel_novo: novoRole }, pessoa.id)
+
   revalidatePath('/equipa')
   return { ok: true }
 }
@@ -176,6 +184,8 @@ export async function removerMembro(pessoaId) {
     await admin.auth.admin.updateUserById(pessoaId, { ban_duration: 'none' })
     return { ok: false, erro: error.message }
   }
+
+  await registarEvento('membro.removido', { pessoa_id: pessoaId }, pessoa.id)
 
   revalidatePath('/equipa')
   revalidatePath(`/equipa/${pessoaId}`)
