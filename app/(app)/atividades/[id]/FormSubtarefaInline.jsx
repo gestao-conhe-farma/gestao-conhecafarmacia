@@ -139,7 +139,7 @@ export default function FormSubtarefaInline({ atividadeId, equipa, subtarefa = n
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={aCarregar} className="btn btn-primary btn-small">
           {aCarregar ? <Loader2 className="animate-spin" size={15} /> : emEdicao ? <Save size={15} /> : <Plus size={15} />}
           {aCarregar ? 'A guardar…' : emEdicao ? 'Guardar alterações' : 'Criar subtarefa'}

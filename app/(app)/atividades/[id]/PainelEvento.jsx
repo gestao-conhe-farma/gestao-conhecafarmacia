@@ -130,7 +130,7 @@ export default function PainelEvento({
             nunca calculada das subtarefas.
           </p>
           {erro && <p className="text-sm text-red-600">{erro}</p>}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={aProcessar} className="btn btn-accent btn-small">
               {aProcessar ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               Concluir evento
@@ -174,7 +174,7 @@ export default function PainelEvento({
             )}
           </div>
           {pedirReal ? (
-            <form onSubmit={corrigirAudiencia} className="mt-3 flex items-center gap-2">
+            <form onSubmit={corrigirAudiencia} className="mt-3 flex flex-wrap items-center gap-2">
               <input
                 type="number"
                 min="0"

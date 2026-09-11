@@ -73,7 +73,7 @@ export default function SecaoEntrevista({
           <h2 className="text-lg font-bold text-brand-deep tracking-tight">
             Participantes da entrevista
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {meuConvite?.status === 'convidado' && (
               <button onClick={confirmar} disabled={aProcessar} className="btn btn-accent btn-small">
                 {aProcessar ? <Loader2 className="animate-spin" size={15} /> : <CalendarCheck size={15} />}
@@ -82,7 +82,7 @@ export default function SecaoEntrevista({
             )}
             {meuConvite?.status === 'confirmado' && (
               <>
-                <span className="badge badge-status-confirmado">
+                <span className="badge badge-status-confirmado shrink-0">
                   <Check size={12} /> Presença confirmada
                 </span>
                 <button onClick={pedirDesconfirmar} disabled={aProcessar} className="btn btn-secondary btn-small">

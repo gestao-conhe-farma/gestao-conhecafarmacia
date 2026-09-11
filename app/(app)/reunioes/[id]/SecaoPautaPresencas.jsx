@@ -136,21 +136,21 @@ export default function SecaoPautaPresencas({
           </ol>
         ) : (
           <p className="mt-4 text-sm text-brand-deep/45 italic">Sem pauta definida.</p>
-        )}
-
-        {/* Ação própria: confirmar / desconfirmar presença */}
-        {meuConvite?.status === 'convidado' && estado === 'agendada' && (
-          <button onClick={confirmar} disabled={aProcessar === 'eu'} className="btn btn-accent btn-small mt-5">
-            {aProcessar === 'eu' ? <Loader2 size={14} className="animate-spin" /> : <CalendarCheck size={14} />}
-            Confirmar a minha presença
-          </button>
-        )}
-        {meuConvite?.status === 'confirmado' && estado === 'agendada' && (
-          <button onClick={pedirDesconfirmar} disabled={aProcessar === 'eu'} className="btn btn-secondary btn-small mt-5">
-            {aProcessar === 'eu' ? <Loader2 size={14} className="animate-spin" /> : <CalendarX size={14} />}
-            Desconfirmar a minha presença
-          </button>
-        )}
+        )}              {/* Ação própria: confirmar / desconfirmar presença */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {meuConvite?.status === 'convidado' && estado === 'agendada' && (
+            <button onClick={confirmar} disabled={aProcessar === 'eu'} className="btn btn-accent btn-small">
+              {aProcessar === 'eu' ? <Loader2 size={14} className="animate-spin" /> : <CalendarCheck size={14} />}
+              Confirmar a minha presença
+            </button>
+          )}
+          {meuConvite?.status === 'confirmado' && estado === 'agendada' && (
+            <button onClick={pedirDesconfirmar} disabled={aProcessar === 'eu'} className="btn btn-secondary btn-small">
+              {aProcessar === 'eu' ? <Loader2 size={14} className="animate-spin" /> : <CalendarX size={14} />}
+              Desconfirmar a minha presença
+            </button>
+          )}
+        </div>
 
         {/* Lista de convocados */}
         <div className="mt-6 border border-brand-divider rounded-xl overflow-hidden">
@@ -202,7 +202,7 @@ export default function SecaoPautaPresencas({
 
                 {/* Marcação de presença (superadmin, pós-reunião) */}
                 {ehSuper && (
-                  <div className="flex gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     {PRESENCAS.map((op) => (
                       <button
                         key={op.v}
@@ -258,7 +258,7 @@ export default function SecaoPautaPresencas({
                       </button>
                     ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={convocarSelecionados}
                     disabled={novos.length === 0 || aProcessar === 'conv'}
