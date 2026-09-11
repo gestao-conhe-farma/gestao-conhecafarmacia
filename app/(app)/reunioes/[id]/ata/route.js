@@ -187,13 +187,17 @@ function sanitizar(t) {
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2022/g, '-') // bullet não é Latin-1: saía cortado do PDF
     .replace(/\u00A0/g, ' ')
     // remover tudo o que não é Latin-1 imprimível
     .replace(/[^\x20-\x7E\u00A0-\u00FF\n]/g, '')
 }
 
-function gerarPdf(ata) {
-  const doc = PDFDocument.create()
+async function gerarPdf(ata) {
+  // PDFDocument.create é ASSÍNCRONO — sem await, doc era uma Promise,
+  // embedFont rebentava dentro do try/catch e a rota devolvia 500:
+  // o download de PDF nunca chegava (o DOCX funcionava porque é síncrono).
+  const doc = await PDFDocument.create()
   let fontRegular, fontBold
   try {
     fontRegular = doc.embedFont(StandardFonts.Helvetica)
