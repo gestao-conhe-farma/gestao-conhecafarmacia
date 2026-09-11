@@ -3,6 +3,103 @@
 import { createClient, createAdminClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { createClient as createAnonClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { registarEvento } from '@/lib/auditoria'
+
+// =============================================================
+// 2FA / TOTP — Activar, confirmar e desativar a segunda camada.
+// Usa o MFA TOTP nativo do Supabase Auth (supabase.auth.mfa.*).
+// =============================================================
+
+/**
+ * Começa a ativação do 2FA: cria um fator TOTP pendente e devolve
+ * o segredo + URI otpauth para gerar o QR no cliente.
+ */
+export async function iniciarAtivacao2FA() {
+  const { pessoa } = await getUtilizadorAtual()
+  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+
+  const supabase = await createClient()
+
+  // Limpa fatores pendentes esquecidos (unverified) para não acumular lixo
+  const { data: fatores } = await supabase.auth.mfa.listFactors()
+  if (fatores) {
+    for (const f of fatores.totp ?? []) {
+      if (f.status === 'unverified') {
+        await supabase.auth.mfa.unenroll({ factorId: f.id })
+      }
+    }
+  }
+
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: 'totp',
+    friendlyName: `${pessoa.nome} · ${new Date().toLocaleDateString('pt-PT')}`,
+  })
+
+  if (error) return { ok: false, erro: 'Não foi possível iniciar: ' + error.message }
+
+  return {
+    ok: true,
+    factorId: data.id,
+    qr: data.totp.qr_code, // data URL PNG, pronta a usar em <img>
+    segredo: data.totp.secret,
+  }
+}
+
+/**
+ * Confirma a ativação com o código de 6 dígitos da app autenticadora.
+ * Prova que a app realmente gere o segredo antes de ativar.
+ */
+export async function confirmarAtivacao2FA(factorId, codigo) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  if (!/^[0-9]{6}$/.test((codigo ?? '').trim())) {
+    return { ok: false, erro: 'Código inválido — são 6 dígitos.' }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.mfa.challengeAndVerify({
+    factorId,
+    code: codigo.trim(),
+  })
+
+  if (error) {
+    return { ok: false, erro: 'Código incorreto ou expirado — espera um novo código e tenta outra vez.' }
+  }
+
+  await registarEvento('2fa.ativado', { pessoa_id: pessoa.id }, pessoa.id)
+  revalidatePath('/definicoes')
+  return { ok: true }
+}
+
+/**
+ * Desativa o 2FA. Exige o código atual da app — não é um simples
+ * botão que qualquer pessoa com a sessão aberta carregue.
+ */
+export async function desativar2FA(factorId, codigo) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  if (!/^[0-9]{6}$/.test((codigo ?? '').trim())) {
+    return { ok: false, erro: 'Código inválido — são 6 dígitos.' }
+  }
+
+  const supabase = await createClient()
+
+  // Prova de posse: o código atual tem de validar antes do unenroll
+  const { error: erroVerificacao } = await supabase.auth.mfa.challengeAndVerify({
+    factorId,
+    code: codigo.trim(),
+  })
+  if (erroVerificacao) {
+    return { ok: false, erro: 'Código incorreto — o 2FA mantém-se ativo.' }
+  }
+
+  const { error } = await supabase.auth.mfa.unenroll({ factorId })
+  if (error) return { ok: false, erro: 'Não foi possível desativar: ' + error.message }
+
+  await registarEvento('2fa.desativado', { pessoa_id: pessoa.id }, pessoa.id)
+  revalidatePath('/definicoes')
+  return { ok: true }
+}
 
 /**
  * Altera a palavra-passe do utilizador autenticado.

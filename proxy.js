@@ -43,14 +43,23 @@ export async function proxy(request) {
 
   // IMPORTANTE: não colocar código entre createServerClient e supabase.auth.getUser().
   let user = null
+  let mfaPendente = false
   try {
     const { data } = await supabase.auth.getUser()
     user = data?.user ?? null
+
+  // 2FA: se a conta tem segunda camada e a sessão ainda está só em
+  // aal1 (primeiro fator verificado), o utilizador tem de completar o
+  // desafio em /login/mfa antes de tocar na app.
+    if (user) {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      mfaPendente = aal?.nextLevel === 'aal2' && aal?.currentLevel !== 'aal2'
+    }
   } catch {
     // Supabase indisponível: segue sem sessão (páginas protegidas falham fechadas).
   }
 
-  const rotasPublicas = ['/login', '/setup']
+  const rotasPublicas = ['/login', '/login/mfa']
   const isPublic = rotasPublicas.some((r) => pathname === r || pathname.startsWith(r + '/'))
 
   // Rotas de API: apenas renovar a sessão e seguir — NUNCA redirecionar.
@@ -99,8 +108,16 @@ export async function proxy(request) {
     }
   }
 
-  // Já autenticado → nunca ver login/setup
-  if (user && pathname === '/login') {
+  // Desafio 2FA pendente: tudo fora de /login/mfa e /api → o desafio
+  if (user && mfaPendente && !pathname.startsWith('/login/mfa') && !pathname.startsWith('/api/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login/mfa'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
+  // Já autenticado (com 2FA completo) → nunca ver login
+  if (user && !mfaPendente && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)

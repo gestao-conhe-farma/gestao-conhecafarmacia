@@ -1,8 +1,9 @@
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { getUtilizadorAtual, createClient } from '@/lib/supabase/server'
 import CartaoPerfil from './CartaoPerfil'
 import CartaoPalavraPasse from './CartaoPalavraPasse'
 import CartaoAparencia from './CartaoAparencia'
 import CartaoSessao from './CartaoSessao'
+import CartaoSeguranca from './CartaoSeguranca'
 
 export const metadata = { title: 'Definições' }
 
@@ -14,11 +15,17 @@ export const metadata = { title: 'Definições' }
 export default async function PaginaDefinicoes() {
   const { pessoa } = await getUtilizadorAtual()
 
+  // Fatores 2FA do próprio (RLS/MFA API garante que só os seus vêm aqui)
+  const supabase = await createClient()
+  const { data: mfa } = await supabase.auth.mfa.listFactors()
+  const fatores = mfa?.totp ?? []
+
   const secoes = [
     { num: '01', titulo: 'Perfil', descricao: 'O nome aparece no dashboard, nas atividades e nos documentos que crias.', corpo: <CartaoPerfil pessoa={pessoa} /> },
-    { num: '02', titulo: 'Palavra-passe', descricao: 'Ao alterar, as sessões noutros dispositivos são terminadas automaticamente.', corpo: <CartaoPalavraPasse /> },
-    { num: '03', titulo: 'Aparência', descricao: 'O tema é guardado neste dispositivo.', corpo: <CartaoAparencia /> },
-    { num: '04', titulo: 'Sessão', descricao: 'Termina a sessão neste dispositivo ou em todos os dispositivos onde a conta está ativa.', corpo: <CartaoSessao /> },
+    { num: '02', titulo: 'Segurança (2FA)', descricao: 'Verificação em dois passos via app autenticadora — pede um código para além da palavra-passe.', corpo: <CartaoSeguranca fatores={fatores} /> },
+    { num: '03', titulo: 'Palavra-passe', descricao: 'Ao alterar, as sessões noutros dispositivos são terminadas automaticamente.', corpo: <CartaoPalavraPasse /> },
+    { num: '04', titulo: 'Aparência', descricao: 'O tema é guardado neste dispositivo.', corpo: <CartaoAparencia /> },
+    { num: '05', titulo: 'Sessão', descricao: 'Termina a sessão neste dispositivo ou em todos os dispositivos onde a conta está ativa.', corpo: <CartaoSessao /> },
   ]
 
   return (
