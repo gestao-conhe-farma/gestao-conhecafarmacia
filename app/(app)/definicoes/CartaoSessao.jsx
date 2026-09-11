@@ -11,6 +11,19 @@ export default function CartaoSessao() {
   const [aProcessar, setAProcessar] = useState(false)
   const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
+  async function terminarAqui() {
+    setAProcessar(true)
+    try {
+      // POST via fetch: a rota de logout só aceita POST — uma navegação
+      // <a href> fazia GET e recebia 405 sem qualquer erro visível.
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.replace('/login')
+      router.refresh()
+    } finally {
+      setAProcessar(false)
+    }
+  }
+
   async function terminar() {
     const ok = await pedirConfirmacao({
       titulo: 'Terminar todas as sessões?',
@@ -38,10 +51,10 @@ export default function CartaoSessao() {
       </p>
 
       <div className="flex flex-wrap gap-3">
-        <a href="/api/auth/logout" className="btn btn-secondary">
+        <button onClick={terminarAqui} disabled={aProcessar} className="btn btn-secondary">
           <LogOut size={16} />
           Terminar sessão aqui
-        </a>
+        </button>
         <button onClick={terminar} disabled={aProcessar} className="btn btn-danger">
           {aProcessar ? <Loader2 className="animate-spin" size={17} /> : <LogOut size={17} />}
           {aProcessar ? 'A terminar…' : 'Terminar todas as sessões'}
