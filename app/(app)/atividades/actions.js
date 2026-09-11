@@ -214,11 +214,20 @@ export async function confirmarParticipacao(atividadeId) {
   return { ok: true }
 }
 
-/** O convidado desfaz a própria confirmação de presença. */
-export async function desconfirmarParticipacao(atividadeId) {
+/**
+ * O convidado desfaz a própria confirmação de presença.
+ * O motivo é obrigatório e fica guardado separadamente
+ * (entrevista_desconfirmacoes) — visível apenas ao próprio
+ * participante e a super_admin.
+ */
+export async function desconfirmarParticipacao(atividadeId, motivo = null) {
   const { pessoa } = await getUtilizadorAtual()
+  if (!motivo || !motivo.trim()) {
+    return { ok: false, erro: 'O justificativo é obrigatório.' }
+  }
 
   const supabase = await createClient()
+
   const { data: registo } = await supabase
     .from('entrevista_participantes')
     .select('status')
@@ -231,6 +240,8 @@ export async function desconfirmarParticipacao(atividadeId) {
     return { ok: false, erro: 'Ainda não confirmaste presença.' }
   }
 
+  const texto = motivo.trim()
+
   const { error } = await supabase
     .from('entrevista_participantes')
     .update({ status: 'convidado' })
@@ -238,6 +249,20 @@ export async function desconfirmarParticipacao(atividadeId) {
     .eq('pessoa_id', pessoa.id)
 
   if (error) return { ok: false, erro: error.message }
+
+  const { error: errMotivo } = await supabase
+    .from('entrevista_desconfirmacoes')
+    .upsert(
+      {
+        atividade_id: atividadeId,
+        pessoa_id: pessoa.id,
+        motivo: texto,
+      },
+      { onConflict: 'atividade_id,pessoa_id' }
+    )
+
+  if (errMotivo) return { ok: false, erro: errMotivo.message }
+
   revalidatePath('/')
   revalidatePath('/entrevistas')
   revalidatePath(`/atividades/${atividadeId}`)

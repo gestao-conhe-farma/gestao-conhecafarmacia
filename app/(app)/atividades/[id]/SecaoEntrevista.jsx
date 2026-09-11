@@ -19,6 +19,8 @@ export default function SecaoEntrevista({
   const [aProcessar, setAProcessar] = useState(false)
   const [modoConvidar, setModoConvidar] = useState(false)
   const [selecionadas, setSelecionadas] = useState([])
+  const [motivoDesconfirmacao, setMotivoDesconfirmacao] = useState('')
+  const [erroDesconfirmacao, setErroDesconfirmacao] = useState(null)
   const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
   const convidadosIds = participantes.map((p) => p.pessoa_id)
@@ -40,11 +42,33 @@ export default function SecaoEntrevista({
       descricao: 'Voltas a ficar como “convidado”. Podes confirmar de novo a qualquer momento.',
       confirmarTxt: 'Desconfirmar',
       perigoso: true,
+      extra: (
+        <div className="mt-2">
+          <label className="form-label">Justificativa (obrigatório)</label>
+          <textarea
+            className="form-textarea"
+            rows={3}
+            autoFocus
+            placeholder="Explica por que deixas de comparecer…"
+            value={motivoDesconfirmacao}
+            onChange={(e) => setMotivoDesconfirmacao(e.target.value)}
+          />
+          {erroDesconfirmacao && (
+            <p className="text-sm text-red-600 mt-2">{erroDesconfirmacao}</p>
+          )}
+        </div>
+      ),
     }).then(async (ok) => {
       if (!ok) return
       setAProcessar(true)
       try {
-        await desconfirmarParticipacao(atividadeId)
+        const r = await desconfirmarParticipacao(atividadeId, motivoDesconfirmacao)
+        if (!r.ok) {
+          setErroDesconfirmacao(r.erro)
+          return
+        }
+        setMotivoDesconfirmacao('')
+        setErroDesconfirmacao(null)
         router.refresh()
       } finally {
         setAProcessar(false)
