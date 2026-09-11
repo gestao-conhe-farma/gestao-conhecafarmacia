@@ -32,6 +32,8 @@ function erroAmigavel(error) {
     return 'Este dispositivo já está registado nesta conta.'
   if (codigo === 'too_many_passkeys')
     return 'A conta chegou ao limite de dispositivos registados — remove um antes de adicionar outro.'
+  if (codigo === 'passkey_disabled')
+    return 'A biometria ainda não está ativada no servidor — pede à coordenação para a ativar (Authentication → Passkeys no Supabase).'
   return error?.message || 'Não foi possível completar a operação. Tenta novamente.'
 }
 

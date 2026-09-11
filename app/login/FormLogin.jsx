@@ -12,6 +12,8 @@ function erroBiometria(error) {
     return 'O domínio atual não corresponde ao registo de biometria do projeto.'
   if (error?.code === 'webauthn_credential_not_found')
     return 'Este dispositivo não está registado em nenhuma conta — entra por email e registra-o nas Definições.'
+  if (error?.code === 'passkey_disabled')
+    return 'A biometria ainda não está ativada no servidor — entra por email e palavra-passe.'
   return 'A biometria falhou — entra por email e palavra-passe.'
 }
 
