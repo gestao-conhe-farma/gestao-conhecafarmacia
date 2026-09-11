@@ -9,8 +9,10 @@
 --    'convidado' enquanto a coordenação não marcar presença.
 -- 4. Desconfirmações de entrevista com justificativa
 --    (só o próprio participante regista; o motivo é privado).
---    Aplicado em entrevista_participantes e
---    reuniao_participantes quando existir.
+-- 5. Motivos de mudança de estado de subtarefa por membros
+--    (concluída / cancelada / erro) — privados ao membro e
+--    à coordenação.
+-- 6. Desconfirmações de presença de reunião com justificativa.
 -- =============================================================
 
 -- Motivos de recusa de subtarefas (um por subtarefa)
@@ -84,4 +86,67 @@ create policy "participante lê próprio motivo" on public.entrevista_desconfirm
 
 -- Coordenação (super_admin) lê todos os justificantes
 create policy "super_admin lê desconfirmações" on public.entrevista_desconfirmacoes
+  for select using (public.minha_role() = 'super_admin');
+
+-- =============================================================
+-- Desconfirmações de presença de reunião com justificativa
+-- =============================================================
+create table if not exists public.reuniao_desconfirmacoes (
+  id uuid primary key default gen_random_uuid(),
+  reuniao_id uuid references public.reunioes(id) on delete cascade not null,
+  pessoa_id uuid references public.pessoas(id) on delete cascade not null,
+  motivo text not null,
+  criado_em timestamptz default now(),
+  unique (reuniao_id, pessoa_id)
+);
+
+alter table public.reuniao_desconfirmacoes enable row level security;
+
+create policy "participante regista desconfirmação" on public.reuniao_desconfirmacoes
+  for insert with check (pessoa_id = auth.uid());
+
+create policy "participante edita próprio motivo" on public.reuniao_desconfirmacoes
+  for update
+    using (pessoa_id = auth.uid())
+    with check (pessoa_id = auth.uid());
+
+create policy "participante lê próprio motivo" on public.reuniao_desconfirmacoes
+  for select using (pessoa_id = auth.uid());
+
+create policy "super_admin lê desconfirmações de reunião" on public.reuniao_desconfirmacoes
+  for select using (public.minha_role() = 'super_admin');
+
+-- =============================================================
+-- Motivos de mudança de estado de subtarefa por membro atribuído
+-- =============================================================
+create table if not exists public.subtarefa_estado_motivos (
+  id uuid primary key default gen_random_uuid(),
+  subtarefa_id uuid references public.subtarefas(id) on delete cascade not null,
+  pessoa_id uuid references public.pessoas(id) on delete cascade not null,
+  estado_novo text not null check (estado_novo in ('concluida', 'cancelada', 'erro')),
+  motivo text not null,
+  criado_em timestamptz default now(),
+  unique (subtarefa_id, pessoa_id, estado_novo)
+);
+
+alter table public.subtarefa_estado_motivos enable row level security;
+
+create policy "participante regista motivo estado" on public.subtarefa_estado_motivos
+  for insert with check (
+    pessoa_id = auth.uid()
+    and exists (
+      select 1 from public.subtarefa_responsaveis r
+      where r.subtarefa_id = subtarefa_id and r.pessoa_id = auth.uid()
+    )
+  );
+
+create policy "participante edita próprio motivo" on public.subtarefa_estado_motivos
+  for update
+    using (pessoa_id = auth.uid())
+    with check (pessoa_id = auth.uid());
+
+create policy "participante lê próprio motivo" on public.subtarefa_estado_motivos
+  for select using (pessoa_id = auth.uid());
+
+create policy "super_admin lê motivos de estado" on public.subtarefa_estado_motivos
   for select using (public.minha_role() = 'super_admin');

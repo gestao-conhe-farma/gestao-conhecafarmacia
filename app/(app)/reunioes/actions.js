@@ -285,11 +285,15 @@ export async function confirmarPresencaReuniao(reuniaoId) {
 
 /**
  * O convocado desfaz a própria confirmação (antes da reunião).
- * A presença tem de estar por marcar — depois disso, só a coordenação
- * mexe nos registos de presença.
+ * O motivo é obrigatório e fica guardado em
+ * reuniao_desconfirmacoes — visível apenas ao próprio
+ * participante e a super_admin.
  */
-export async function desconfirmarPresencaReuniao(reuniaoId) {
+export async function desconfirmarPresencaReuniao(reuniaoId, motivo = null) {
   const { pessoa } = await getUtilizadorAtual()
+  if (!motivo || !motivo.trim()) {
+    return { ok: false, erro: 'O justificativo é obrigatório.' }
+  }
 
   const supabase = await createClient()
   const { data: registo } = await supabase
@@ -307,6 +311,8 @@ export async function desconfirmarPresencaReuniao(reuniaoId) {
     return { ok: false, erro: 'Ainda não confirmaste presença.' }
   }
 
+  const texto = motivo.trim()
+
   const { error } = await supabase
     .from('reuniao_participantes')
     .update({ status: 'convidado' })
@@ -314,6 +320,19 @@ export async function desconfirmarPresencaReuniao(reuniaoId) {
     .eq('pessoa_id', pessoa.id)
 
   if (error) return { ok: false, erro: error.message }
+
+  const { error: errMotivo } = await supabase
+    .from('reuniao_desconfirmacoes')
+    .upsert(
+      {
+        reuniao_id: reuniaoId,
+        pessoa_id: pessoa.id,
+        motivo: texto,
+      },
+      { onConflict: 'reuniao_id,pessoa_id' }
+    )
+
+  if (errMotivo) return { ok: false, erro: errMotivo.message }
   revalidatePath(`/reunioes/${reuniaoId}`)
   revalidatePath('/reunioes')
   return { ok: true }

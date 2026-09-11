@@ -13,6 +13,13 @@ import CalendarioPrazos from './CalendarioPrazos'
 
 export const metadata = { title: 'Início' }
 
+const ROTULO_STATUS = {
+  aprovada: { label: 'Aprovada', cls: 'badge-status-aprovada' },
+  concluida: { label: 'Concluída', cls: 'badge-status-concluida' },
+  cancelada: { label: 'Cancelada', cls: 'badge-status-cancelada' },
+  erro: { label: 'Erro', cls: 'badge-status-erro' },
+}
+
 export default async function PaginaInicio({ searchParams }) {
   const { pessoa } = await getUtilizadorAtual()
   const params = await searchParams
@@ -28,10 +35,13 @@ export default async function PaginaInicio({ searchParams }) {
   ])
 
   const subtarefasVisiveis = minhasSubtarefas.filter((s) =>
-    ['aprovada', 'concluida'].includes(s.status)
+    ['aprovada', 'concluida', 'cancelada', 'erro'].includes(s.status)
   )
   const emAtraso = subtarefasVisiveis.filter(
-    (s) => s.status !== 'concluida' && s.prazo && new Date(s.prazo) < new Date()
+    (s) =>
+      !['concluida', 'cancelada', 'erro'].includes(s.status) &&
+      s.prazo &&
+      new Date(s.prazo) < new Date()
   )
 
   // Eventos para o calendário de prazos: atividades, subtarefas com prazo
@@ -189,12 +199,18 @@ export default async function PaginaInicio({ searchParams }) {
                 <li key={s.id} className="py-3.5 flex items-center gap-3">
                   <span
                     className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      s.status === 'concluida' ? 'bg-brand-accent' : 'bg-amber-500'
+                      s.status === 'concluida'
+                        ? 'bg-brand-accent'
+                        : s.status === 'erro'
+                        ? 'bg-red-600'
+                        : s.status === 'cancelada'
+                        ? 'bg-slate-500'
+                        : 'bg-amber-500'
                     }`}
                     aria-hidden="true"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-brand-deep truncate">
+                    <p className={`text-sm font-semibold text-brand-deep truncate ${s.status === 'concluida' ? 'line-through opacity-60' : ''}`}>
                       {s.titulo}
                     </p>
                     <p className="text-xs text-brand-deep/50">
@@ -203,8 +219,8 @@ export default async function PaginaInicio({ searchParams }) {
                       {s.prazo && ` · prazo ${formatarData(s.prazo)}`}
                     </p>
                   </div>
-                  <span className={`badge ${s.status === 'concluida' ? 'badge-status-concluida' : 'badge-status-aprovada'}`}>
-                    {s.status === 'concluida' ? 'Concluída' : 'Aprovada'}
+                  <span className={`badge ${ROTULO_STATUS[s.status]?.cls ?? 'badge-status-aprovada'}`}>
+                    {ROTULO_STATUS[s.status]?.label ?? s.status}
                   </span>
                 </li>
               ))}

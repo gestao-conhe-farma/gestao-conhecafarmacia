@@ -164,13 +164,24 @@ export async function eliminarSubtarefa(id) {
   return { ok: true }
 }
 
-/** Marcar subtarefa aprovada como concluída. */
-export async function concluirSubtarefa(id) {
+/**
+ * Mudar estado de uma subtarefa por um responsável atribuído
+ * ou pelo criador. Estados permitidos: concluida, cancelada, erro.
+ * O motivo (caixa de relatório) é obrigatório e fica guardado em
+ * subtarefa_estado_motivos — visível apenas ao próprio autor
+ * e a super_admin.
+ */
+export async function mudarEstadoSubtarefa(id, estado, motivo = null) {
   const { pessoa } = await getUtilizadorAtual()
+  if (!['concluida', 'cancelada', 'erro'].includes(estado)) {
+    return { ok: false, erro: 'Estado inválido.' }
+  }
+  if (!motivo || !motivo.trim()) {
+    return { ok: false, erro: 'O justificativo é obrigatório.' }
+  }
 
   const supabase = await createClient()
 
-  // Verificar permissão: criador, responsável ou super_admin
   const { data: sub } = await supabase
     .from('subtarefas')
     .select('id, status, criado_por, atividade_id, subtarefa_responsaveis(pessoa_id)')
@@ -178,21 +189,103 @@ export async function concluirSubtarefa(id) {
     .single()
 
   if (!sub) return { ok: false, erro: 'Subtarefa não encontrada.' }
-  if (sub.status !== 'aprovada') {
-    return { ok: false, erro: 'Só subtarefas aprovadas podem ser concluídas.' }
+
+  const responsavelIds = sub.subtarefa_responsaveis?.map((r) => r.pessoa_id) ?? []
+  const eResponsavel = responsavelIds.includes(pessoa.id)
+  const eCriador = sub.criado_por === pessoa.id
+
+  if (pessoa.role !== 'super_admin' && !eResponsavel && !eCriador) {
+    return { ok: false, erro: 'Só podes mexer em subtarefas atribuídas a ti ou criadas por ti.' }
   }
 
-  const ehResponsavel = sub.subtarefa_responsaveis?.some((r) => r.pessoa_id === pessoa.id)
-  if (pessoa.role !== 'super_admin' && sub.criado_por !== pessoa.id && !ehResponsavel) {
-    return { ok: false, erro: 'Sem permissão para concluir esta subtarefa.' }
+  // super_admin pode sempre; criador/responsável só quando a subtarefa
+  // está aprovada ou já num estado final (para corrigir).
+  const podeMudarEstado =
+    pessoa.role === 'super_admin' ||
+    ['aprovada', 'concluida', 'cancelada', 'erro'].includes(sub.status)
+
+  if (!podeMudarEstado) {
+    return { ok: false, erro: 'Só podes alterar o estado de subtarefas aprovadas.' }
   }
 
   const { error } = await supabase
     .from('subtarefas')
-    .update({ status: 'concluida' })
+    .update({ status: estado })
     .eq('id', id)
 
   if (error) return { ok: false, erro: error.message }
+
+  const { error: errMotivo } = await supabase
+    .from('subtarefa_estado_motivos')
+    .upsert(
+      {
+        subtarefa_id: id,
+        pessoa_id: pessoa.id,
+        estado_novo: estado,
+        motivo: motivo.trim(),
+      },
+      { onConflict: 'subtarefa_id,pessoa_id,estado_novo' }
+    )
+
+  if (errMotivo) return { ok: false, erro: errMotivo.message }
+
+  revalidatePath('/')
+  if (sub.atividade_id) revalidatePath(`/atividades/${sub.atividade_id}`)
+  return { ok: true }
+}
+
+/**
+ * Marcar subtarefa aprovada como concluída (atalho para mudarEstadoSubtarefa).
+ */
+export async function concluirSubtarefa(id, motivo = null) {
+  return mudarEstadoSubtarefa(id, 'concluida', motivo)
+}
+
+/**
+ * Recusar a própria atribuição a uma subtarefa (desconfirmação).
+ * O responsável atribuído sai da subtarefa e regista um justificativo
+ * obrigatório — privado: só o autor e a coordenação (super_admin) leem.
+ */
+export async function desconfirmarAtribuicaoSubtarefa(id, motivo = null) {
+  const { pessoa } = await getUtilizadorAtual()
+  const texto = (motivo ?? '').trim()
+  if (!texto) {
+    return { ok: false, erro: 'O justificativo é obrigatório.' }
+  }
+
+  const supabase = await createClient()
+  const { data: sub } = await supabase
+    .from('subtarefas')
+    .select('id, status, atividade_id, subtarefa_responsaveis(pessoa_id)')
+    .eq('id', id)
+    .single()
+
+  if (!sub) return { ok: false, erro: 'Subtarefa não encontrada.' }
+  if (!['aprovada', 'concluida', 'cancelada', 'erro'].includes(sub.status)) {
+    return { ok: false, erro: 'Só subtarefas aprovadas têm atribuição para recusar.' }
+  }
+
+  const eResponsavel = sub.subtarefa_responsaveis?.some((r) => r.pessoa_id === pessoa.id)
+  if (!eResponsavel) {
+    return { ok: false, erro: 'Esta subtarefa não está atribuída a ti.' }
+  }
+
+  // Guarda o justificativo antes de sair (RLS exige que ainda seja responsável)
+  const { error: errMotivo } = await supabase
+    .from('subtarefa_desconfirmacoes')
+    .upsert(
+      { subtarefa_id: id, pessoa_id: pessoa.id, motivo: texto },
+      { onConflict: 'subtarefa_id,pessoa_id' }
+    )
+  if (errMotivo) return { ok: false, erro: errMotivo.message }
+
+  const { error: errSaida } = await supabase
+    .from('subtarefa_responsaveis')
+    .delete()
+    .eq('subtarefa_id', id)
+    .eq('pessoa_id', pessoa.id)
+  if (errSaida) return { ok: false, erro: errSaida.message }
+
   revalidatePath('/')
   if (sub.atividade_id) revalidatePath(`/atividades/${sub.atividade_id}`)
   return { ok: true }

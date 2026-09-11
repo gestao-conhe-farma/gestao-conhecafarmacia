@@ -35,4 +35,6 @@ credenciais.txt
 # artefactos de sessão local (cookies, logs)
 c*.txt
 s*.log
-_design/jar.txt
+
+# protótipos e scripts de verificação local
+/_design/
