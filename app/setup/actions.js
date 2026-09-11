@@ -7,16 +7,19 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
  * em pessoas (a página /setup já redireciona, isto é a segunda barreira).
  */
 export async function criarPrimeiroSuperAdmin({ nome, email, password }) {
-  const supabase = await createClient()
-  const { count } = await supabase
+  const admin = await createAdminClient()
+
+  // VERIFICAÇÃO VIA SERVICE_ROLE: com o cliente anon, a RLS devolve zero
+  // linhas a quem não está autenticado — o count seria sempre 0 e qualquer
+  // anónimo podia criar uma conta super_admin. O service_role ignora RLS
+  // e vê o número real de registos.
+  const { count } = await admin
     .from('pessoas')
     .select('id', { count: 'exact', head: true })
 
-  if (count > 0) {
+  if ((count ?? 0) > 0) {
     return { ok: false, erro: 'A configuração inicial já foi feita.' }
   }
-
-  const admin = await createAdminClient()
 
   // Criar utilizador no Auth
   const { data, error } = await admin.auth.admin.createUser({
@@ -50,7 +53,8 @@ export async function criarPrimeiroSuperAdmin({ nome, email, password }) {
     return { ok: false, erro: 'Falha ao registar o utilizador: ' + erroPessoa.message }
   }
 
-  // Sessão automática para o novo super_admin
+  // Sessão automática para o novo super_admin (cliente anon, com cookies)
+  const supabase = await createClient()
   const { error: erroLogin } = await supabase.auth.signInWithPassword({ email, password })
   if (erroLogin) {
     return { ok: true, aviso: 'Conta criada. Faz login para continuar.' }

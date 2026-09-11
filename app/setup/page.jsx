@@ -1,4 +1,4 @@
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import FormSetup from './FormSetup'
 
@@ -6,17 +6,19 @@ export const metadata = { title: 'Configuração inicial' }
 
 export default async function SetupPage() {
   // Só disponível enquanto não existir ninguém em pessoas.
-  const supabase = await createClient()
-  const { count } = await supabase
+  // Service_role: com o cliente anon, a RLS esconde TODAS as linhas de
+  // quem não está autenticado — o count seria sempre 0 e a página nunca
+  // se desativava. (Ver o mesmo fix em actions.js.)
+  const admin = await createAdminClient()
+  const { count } = await admin
     .from('pessoas')
     .select('id', { count: 'exact', head: true })
 
-  if (count > 0) {
+  if ((count ?? 0) > 0) {
     redirect('/login')
   }
 
   // Verificar se já existe algum utilizador no Auth (evita duplicar)
-  const admin = await createAdminClient()
   const { data: { users } } = await admin.auth.admin.listUsers({ page: 1, perPage: 10 })
   const emailSugerido = users?.length === 1 ? users[0].email : ''
 

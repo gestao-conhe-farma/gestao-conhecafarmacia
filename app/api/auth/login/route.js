@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 
 // Loga no console do servidor (visível nos Function Logs da Vercel).
 // Nunca logar a password — só o email, código e mensagem do Supabase.
 function logErro(fase, detalhes) {
   console.error(`[api/auth/login] ${fase}`, JSON.stringify(detalhes, null, 2))
 }
+
+// Rate limiting por conta: 8 falhas em 15 minutos bloqueia a conta
+// temporariamente. O registo vive em login_falhas (escrito via
+// service_role, RLS fecha a leitura a todos exceto super_admin).
+const JANELA_MINUTOS = 15
+const MAX_FALHAS = 8
 
 export async function POST(request) {
   // 1) Body inválido / não-JSON
@@ -31,22 +37,56 @@ export async function POST(request) {
     )
   }
 
+  const emailNormalizado = String(email).trim().toLowerCase()
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
+  const userAgent = request.headers.get('user-agent')?.slice(0, 300) ?? null
+
   // 3) Supabase login
   try {
+    const admin = await createAdminClient()
+
+    // 3.a) Rate limit por conta — verificado ANTES do signIn.
+    const desde = new Date(Date.now() - JANELA_MINUTOS * 60 * 1000).toISOString()
+    const { count: falhasRecentes } = await admin
+      .from('login_falhas')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', emailNormalizado)
+      .gte('criado_em', desde)
+
+    if ((falhasRecentes ?? 0) >= MAX_FALHAS) {
+      logErro('rate limit atingido', { email: emailNormalizado, falhas: falhasRecentes, ip })
+      return NextResponse.json(
+        { erro: 'Demasiadas tentativas. Espera 15 minutos antes de tentar de novo.' },
+        { status: 429 }
+      )
+    }
+
     const supabase = await createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailNormalizado,
+      password,
+    })
 
     if (error) {
+      // 3.b) Registar a falha (best-effort: se falhar, o login continua a ser recusado)
+      admin
+        .from('login_falhas')
+        .insert({ email: emailNormalizado, ip, user_agent: userAgent })
+        .then(({ error: erroLog }) => {
+          if (erroLog) console.error('[api/auth/login] falha ao registar tentativa', erroLog.message)
+        })
+
       const mensagem =
         error.message === 'Invalid login credentials'
           ? 'Credenciais inválidas. Verifica o email e a palavra-passe.'
           : error.message
 
       logErro('signInWithPassword falhou', {
-        email,
+        email: emailNormalizado,
         status: error.status,
         code: error.code,
         message: error.message,
+        ip,
       })
 
       return NextResponse.json(
@@ -54,6 +94,13 @@ export async function POST(request) {
         { status: error.status && error.status >= 400 && error.status < 600 ? error.status : 401 }
       )
     }
+
+    // Sessão válida: limpa o histórico de falhas desta conta (novo início "limpo")
+    admin.from('login_falhas').delete().eq('email', emailNormalizado).then(
+      ({ error: erroLimpeza }) => {
+        if (erroLimpeza) console.error('[api/auth/login] falha ao limpar histórico', erroLimpeza.message)
+      }
+    )
 
     // Marca o instante do login: o proxy usa-o para aplicar o limite
     // absoluto de 4h (cookie httpOnly, desaparece sozinho em 4h).
@@ -67,7 +114,7 @@ export async function POST(request) {
     })
     return resposta
   } catch (errSupabase) {
-    // Ex.: NEXT_PUBLIC_SUPABASE_URL/ANON_KEY em falta na Vercel, rede, etc.
+    // Ex.: env vars em falta na Vercel, rede, etc.
     logErro('exceção no cliente Supabase', {
       message: errSupabase?.message,
       name: errSupabase?.name,
@@ -77,10 +124,7 @@ export async function POST(request) {
     })
 
     return NextResponse.json(
-      {
-        erro: 'Erro no servidor de autenticação. Tenta novamente.',
-        detalhe: errSupabase?.message ?? String(errSupabase),
-      },
+      { erro: 'Erro no servidor de autenticação. Tenta novamente.' },
       { status: 500 }
     )
   }
