@@ -8,6 +8,7 @@ import {
   listarPlanosReuniao,
   listarAnexosReuniao,
   listarEquipa,
+  listarMensagens,
 } from '@/lib/dados'
 import SecaoPautaPresencas from './SecaoPautaPresencas'
 import EditarReuniao from './EditarReuniao'
@@ -16,6 +17,7 @@ import SecaoPlanos from './SecaoPlanos'
 import SecaoResumo from './SecaoResumo'
 import SecaoAnexos from './SecaoAnexos'
 import ControleVisibilidade from './ControleVisibilidade'
+import SecaoConversa from '../../chats/SecaoConversa'
 
 export const metadata = { title: 'Reunião' }
 
@@ -25,11 +27,12 @@ export default async function PaginaReuniao({ params }) {
   const reuniao = await obterReuniao(id)
   if (!reuniao) notFound()
 
-  const [notas, planos, anexos, equipa] = await Promise.all([
+  const [notas, planos, anexos, equipa, mensagens] = await Promise.all([
     listarNotasReuniao(id),
     listarPlanosReuniao(id),
     listarAnexosReuniao(id),
     listarEquipa(),
+    listarMensagens(`reuniao:${id}`).catch(() => []),
   ])
 
   const ehSuper = pessoa.role === 'super_admin'
@@ -197,6 +200,27 @@ export default async function PaginaReuniao({ params }) {
         ehSuper={ehSuper}
         num="05"
       />
+
+      {/* 06 — Conversa (herda a visibilidade da reunião via RLS) */}
+      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+        <span className="sec-num">06</span>
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">Conversa</h2>
+          <p className="text-[13.5px] text-brand-deep/55 mt-1 leading-relaxed max-w-xl">
+            {reuniao.visibilidade === 'coordenacao'
+              ? 'Visível apenas à coordenação — segue a privacidade da reunião.'
+              : 'Discussão aberta da equipa sobre esta reunião.'}
+          </p>
+          <div className="mt-5">
+            <SecaoConversa
+              canal={`reuniao:${id}`}
+              mensagensIniciais={mensagens}
+              meuId={pessoa.id}
+              placeholder="Mensagem sobre esta reunião…"
+            />
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

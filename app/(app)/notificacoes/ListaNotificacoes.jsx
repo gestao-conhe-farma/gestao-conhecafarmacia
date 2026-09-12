@@ -25,6 +25,7 @@ const COR_TIPO = {
   subtarefa_atribuida: 'bg-amber-500',
   subtarefa_pendente: 'bg-violet-500',
   decisao_pendente: 'bg-violet-500',
+  dm_nova: 'bg-teal-500',
 }
 
 export default function ListaNotificacoes({ iniciais = [] }) {

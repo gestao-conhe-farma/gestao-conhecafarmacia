@@ -8,6 +8,7 @@ import {
   listarParticipantes,
   listarAtividadesFilhas,
   listarEquipa,
+  listarMensagens,
   formatarData,
 } from '@/lib/dados'
 import ListaSubtarefas from './ListaSubtarefas'
@@ -17,6 +18,7 @@ import PainelEvento from './PainelEvento'
 import PainelConclusao from './PainelConclusao'
 import EditarDetalhes from './EditarDetalhes'
 import ListaMateriais from './ListaMateriais'
+import SecaoConversa from '../../chats/SecaoConversa'
 
 export const metadata = { title: 'Atividade' }
 
@@ -28,7 +30,7 @@ export default async function PaginaAtividade({ params }) {
 
   const supabase = await createClient()
 
-  const [subtarefas, participantes, filhas, equipa, entidades, profissionais] = await Promise.all([
+  const [subtarefas, participantes, filhas, equipa, entidades, profissionais, mensagens] = await Promise.all([
     listarSubtarefas({ atividadeId: id }),
     atividade.tipo === 'entrevista' ? listarParticipantes(id) : Promise.resolve([]),
     atividade.tipo === 'evento' ? listarAtividadesFilhas(id) : Promise.resolve([]),
@@ -37,6 +39,7 @@ export default async function PaginaAtividade({ params }) {
     atividade.tipo === 'entrevista'
       ? supabase.from('profissionais').select('id, nome, profissao').eq('ativo', true).order('nome')
       : Promise.resolve({ data: [] }),
+    listarMensagens(`atividade:${id}`).catch(() => []),
   ])
 
   const ehSuper = pessoa.role === 'super_admin'
@@ -54,6 +57,7 @@ export default async function PaginaAtividade({ params }) {
   const numSubtarefas = temSecaoExtra ? '02' : '01'
   const numNova = temSecaoExtra ? '03' : '02'
   const numConclusao = temSecaoExtra ? '04' : '03'
+  const numConversa = temSecaoExtra ? '05' : '04'
 
   return (
     <div className="container-app max-w-4xl">
@@ -319,6 +323,26 @@ export default async function PaginaAtividade({ params }) {
           </p>
           <div className="mt-5">
             <PainelConclusao atividadeId={id} statusEvento={atividade.status_evento} />
+          </div>
+        </div>
+      </section>
+
+      {/* Conversa — chat colado a esta atividade (RLS segue a atividade) */}
+      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+        <span className="sec-num">{numConversa}</span>
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">Conversa</h2>
+          <p className="text-[13.5px] text-brand-deep/55 mt-1 leading-relaxed max-w-xl">
+            Coordenação, responsáveis e equipa — links, decisões e detalhes
+            deste trabalho ficam aqui, com histórico.
+          </p>
+          <div className="mt-5">
+            <SecaoConversa
+              canal={`atividade:${id}`}
+              mensagensIniciais={mensagens}
+              meuId={pessoa.id}
+              placeholder="Mensagem para a equipa desta atividade…"
+            />
           </div>
         </div>
       </section>

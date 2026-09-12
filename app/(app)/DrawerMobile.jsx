@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   LogOut, Menu, Moon, Plus, Sun, X, ChevronRight,
-  LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen, MessagesSquare,
+  LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen, MessageCircle,
   Handshake, Stethoscope, Megaphone,
 } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
@@ -20,6 +20,7 @@ const ICONES = {
   entrevistas: CalendarCheck,
   reunioes: MessagesSquare,
   documentos: FolderOpen,
+  conversas: MessageCircle,
   entidades: Handshake,
   profissionais: Stethoscope,
   conteudo: Megaphone,

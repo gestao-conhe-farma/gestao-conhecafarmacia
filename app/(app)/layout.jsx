@@ -55,6 +55,7 @@ export default async function AppLayout({ children }) {
     { href: '/entrevistas', label: 'As minhas entrevistas', icon: 'entrevistas', badge: nConvites },
     { href: '/reunioes', label: 'Reuniões', icon: 'reunioes', badge: nConvocorias },
     { href: '/documentos', label: 'Documentos', icon: 'documentos' },
+    { href: '/conversas', label: 'Conversas', icon: 'conversas' },
     { href: '/entidades', label: 'Entidades', icon: 'entidades' },
     { href: '/profissionais', label: 'Profissionais', icon: 'profissionais' },
     { href: '/conteudo', label: 'Conteúdo', icon: 'conteudo' },

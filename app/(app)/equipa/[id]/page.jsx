@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Mail, MessageCircle, Phone } from 'lucide-react'
+import { ArrowLeft, Mail, MessageCircle, MessagesSquare, Phone } from 'lucide-react'
 import { exigirUtilizador } from '@/lib/supabase/server'
 import { obterPessoa, listarCargaMembro, formatarData } from '@/lib/dados'
 import { linkTelefone, linkWhatsapp } from '@/lib/contactos'
@@ -71,6 +71,15 @@ export default async function PaginaPerfil({ params }) {
                 <span className="role-pill bg-red-500/10 text-red-600 normal-case">
                   Ex-membro
                 </span>
+              )}
+              {!souEu && pessoa.ativo && (
+                <Link
+                  href={`/conversas/${pessoa.id}`}
+                  className="inline-flex items-center gap-1.5 text-brand-primary hover:text-brand-accent transition-colors font-medium"
+                >
+                  <MessagesSquare size={14} />
+                  Conversa
+                </Link>
               )}
             </p>
           </div>
