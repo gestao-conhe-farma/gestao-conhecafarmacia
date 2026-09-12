@@ -18,7 +18,7 @@
 | 4 | ~~Fechar o ciclo reunião → ação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — data-alvo nos planos + widget "Decisões à espera" |
 | 5 | Reuniões recorrentes (clonar) | 🟠 Médio | Baixo | Quando der |
 | 6 | Backups/exportação | 🟠 Médio | Baixo | Quando der |
-| 7 | PWA (instalável no telemóvel) | 🟡 Baixo | Baixo | Quando der |
+| 7 | ~~PWA (instalável no telemóvel)~~ | 🟡 Baixo | Baixo | ✅ Implementado set 2026 — manifest + service worker de assets |
 | 8 | Ambiente de staging | 🟡 Baixo | Médio | Antes da próxima mudança de RLS |
 | 9 | Retenção de `login_falhas` (pg_cron) | 🟡 Baixo | Muito baixo | Quando der |
 
@@ -229,11 +229,21 @@ Idealmente anotado num lembrete do próprio sistema (novas notificações! 🙂)
 
 ---
 
-## 7. PWA
+## 7. PWA — ✅ IMPLEMENTADO (setembro 2026)
 
-O favicon/logo já existem; falta um `manifest.json` + meta tags para a app
-ser instalável no telemóvel — como a equipa a usa em campo, é ganho real
-por ~1h de trabalho.
+**Estado:** manifest (`app/manifest.js` → `/manifest.webmanifest`) com ícones
+gerados do logo oficial (`scripts/gerar-icones-pwa.mjs`, fundo verde da marca
+`#003528`, versões maskable para Android) + service worker (`public/sw.js`)
+que cacheia apenas assets imutáveis (`/_next/static`, ícones, logo). HTML,
+API e Supabase ficam sempre na rede — dado vivo e sessão fresca, sem risco
+de dados velhos. `theme_color` da barra do sistema e apple-touch-icon
+incluídos; `proxy.js` deixa `sw.js` e o manifest fora do guard de sessão.
+
+**Para instalar:** no Android (Chrome/Edge), menu → "Instalar aplicação";
+no iPhone (Safari), Partilhar → "Adicionar ao Ecrã Principal".
+
+O favicon/logo já existiam; faltava o manifest + meta tags — como a equipa
+usa a app em campo, é ganho real por ~1h de trabalho.
 
 ---
 

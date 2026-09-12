@@ -1,6 +1,7 @@
 import { Inter, Fraunces } from 'next/font/google'
 import '@/styles/globals.css'
 import { TemaProvider } from '@/components/TemaProvider'
+import RegistaSW from './RegistaSW'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,8 +27,14 @@ export const metadata = {
   robots: { index: false, follow: false },
   icons: {
     icon: '/icon.png',
-    apple: '/apple-icon.png',
+    apple: '/icons/apple-touch-icon.png',
   },
+}
+
+// PWA: barra do sistema na cor da marca (o manifest é injetado
+// automaticamente pelo Next a partir de app/manifest.js)
+export const viewport = {
+  themeColor: '#003528',
 }
 
 export default function RootLayout({ children }) {
@@ -41,7 +48,10 @@ export default function RootLayout({ children }) {
             __html: `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
           }}
         />
-        <TemaProvider>{children}</TemaProvider>
+        <TemaProvider>
+          <RegistaSW />
+          {children}
+        </TemaProvider>
       </body>
     </html>
   )

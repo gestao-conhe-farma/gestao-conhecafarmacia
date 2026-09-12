@@ -128,6 +128,9 @@ export async function proxy(request) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    // sw.js e manifest ficam fora: o browser pede-os fora da sessão
+    // (registo do SW no load, manifest no login) e o middleware os
+    // redicionaria para /login.
+    '/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|sw.js|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
