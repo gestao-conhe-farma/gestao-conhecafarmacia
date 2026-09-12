@@ -1,5 +1,6 @@
 import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { listarEntrevistasPorProfissional } from '@/lib/dados'
 import ListaProfissionais from './ListaProfissionais'
 
 export const metadata = { title: 'Profissionais' }
@@ -22,7 +23,10 @@ export default async function PaginaProfissionais({ searchParams }) {
   if (!mostrarInativos) query = query.eq('ativo', true)
   if (filtro) query = query.or(`nome.ilike.%${filtro}%,profissao.ilike.%${filtro}%,instituicao.ilike.%${filtro}%`)
 
-  const { data } = await query
+  const [{ data }, historico] = await Promise.all([
+    query,
+    listarEntrevistasPorProfissional(),
+  ])
 
   return (
     <div className="container-app max-w-4xl">
@@ -38,7 +42,13 @@ export default async function PaginaProfissionais({ searchParams }) {
         </p>
       </div>
 
-      <ListaProfissionais iniciais={data ?? []} filtroInicial={filtro} verInativos={mostrarInativos} ehSuper={pessoa.role === 'super_admin'} />
+      <ListaProfissionais
+        iniciais={data ?? []}
+        historicoEntrevistas={historico}
+        filtroInicial={filtro}
+        verInativos={mostrarInativos}
+        ehSuper={pessoa.role === 'super_admin'}
+      />
     </div>
   )
 }

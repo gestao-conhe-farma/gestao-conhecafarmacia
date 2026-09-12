@@ -13,8 +13,8 @@
 | # | Melhoria | Impacto | Esforço | Sugestão |
 |---|----------|---------|---------|----------|
 | 1 | ~~Notificações (email/badge)~~ | 🔴 Alto | Médio | ✅ Implementado set 2026 — sino + /notificacoes + email via Resend |
-| 2 | Registo de parceiros + **lista de profissionais externos** | 🔴 Alto | Médio | Primeiro a fazer |
-| 3 | Pipeline de conteúdo para redes sociais | 🔴 Alto | Médio/Grande | Planear quando doer |
+| 2 | ~~Registo de parceiros + **lista de profissionais externos**~~ | 🔴 Alto | Médio | ✅ Implementado set 2026 — /entidades + /profissionais com histórico de entrevistas |
+| 3 | ~~Pipeline de conteúdo para redes sociais~~ | 🔴 Alto | Médio/Grande | ✅ Implementado set 2026 — /conteudo (calendário editorial, versão simplificada) |
 | 4 | ~~Fechar o ciclo reunião → ação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — data-alvo nos planos + widget "Decisões à espera" |
 | 5 | Reuniões recorrentes (clonar) | 🟠 Médio | Baixo | Quando der |
 | 6 | Backups/exportação | 🟠 Médio | Baixo | Quando der |
@@ -32,8 +32,11 @@ domínio `conhecafarmacia.com` verificado). Eventos ativos: convite/cancelamento
 de reunião, ata publicada, convite de entrevista, subtarefa atribuída.
 
 **Pendente para mais tarde:** lembrete automático 24h antes de reuniões
-(precisa de cron — pg_cron ou Vercel Cron) e notificação de aprovações
-pendentes para a coordenação.
+(precisa de cron — pg_cron ou Vercel Cron).
+
+**Complemento implementado (set 2026):** notificações **in-app** (sem email)
+para a coordenação — subtarefa pendente de aprovação e decisão aprovada à
+espera de conversão em atividade.
 
 **Problema original:** ninguém sabia que lhe foi atribuído algo sem entrar na
 app e procurar. Reunião agendada, subtarefa atribuída, ata publicada,
@@ -56,7 +59,19 @@ ferramenta se a ferramenta a procurar. É o que muda o uso diário.
 
 ---
 
-## 2. Registo de parceiros + lista de profissionais externos
+## 2. Registo de parceiros + lista de profissionais externos — ✅ IMPLEMENTADO (setembro 2026)
+
+**Estado:** secções `/entidades` (Parceiro, Patrocinador, Instituição, Empresa,
+ligáveis a atividades com papel parceiro/patrocinador) e `/profissionais`
+(roster externo para convites, alimentado por toda a equipa). O campo
+"Profissional externo convidado" das entrevistas escolhe da lista.
+
+**Histórico de entrevistas (set 2026):** cada profissional mostra
+"N entrevistas dadas" expansível com links para as atividades; o perfil de
+cada membro da equipa ganhou a secção 04 · Entrevistas com as participações
+e confirmações.
+
+O desenho original, por referência:
 
 Duas entidades relacionadas, mas com papéis diferentes:
 
@@ -144,11 +159,24 @@ create table public.profissionais (
 
 ---
 
-## 3. Pipeline de conteúdo (Facebook, TikTok, Instagram, YouTube)
+## 3. Pipeline de conteúdo — ✅ IMPLEMENTADO (setembro 2026, versão simplificada)
 
-**Problema:** a agenda editorial de redes sociais vive fora da app.
+**Estado:** secção `/conteudo` — calendário editorial das redes (Facebook,
+Instagram, TikTok, YouTube) em vez de um tipo de atividade, conforme pedido:
 
-**Proposta (leve):** tipo de atividade **"Conteúdo"** com campos extra:
+- **Vista lista**: temas agrupados por semana (destaque "Sai esta semana"),
+  do mais próximo ao mais distante
+- **Vista calendário**: mês com pontos coloridos por plataforma; clique no
+  dia filtra o conteúdo dele
+- **Ciclo por tema**: ideia → planeado → produzido → agendado → publicado,
+  com link da publicação guardado como arquivo
+- Equipa inteira cria/edita/publica/arquiva; apagar é só coordenação (RLS)
+- Widget "Nas redes esta semana" no dashboard
+
+**Problema:** a agenda editorial de redes sociais vivia fora da app.
+
+**Proposta original (não seguida — o utilizador preferiu algo mais simples):**
+tipo de atividade **"Conteúdo"** com campos extra:
 
 - Plataforma(s) alvo (multi-seleção)
 - Estado: ideia → guião → gravação → edição → agendado → publicado
@@ -231,8 +259,8 @@ select cron.schedule('limpar-login-falhas', '0 3 * * *',
 
 ## Ordem sugerida
 
-1. **Notificações** — muda o uso diário
-2. **Parceiros + profissionais externos** — protege a memória institucional e resolve a pressão real das entrevistas
-3. **Ciclo reunião → ação** — salva decisões
-4. Pipeline de conteúdo — quando a equipa sentir a dor
-5. Restantes — incrementalmente
+1. ~~**Notificações**~~ — ✅ implementado
+2. ~~**Parceiros + profissionais externos**~~ — ✅ implementado
+3. ~~**Ciclo reunião → ação**~~ — ✅ implementado
+4. ~~Pipeline de conteúdo~~ — ✅ implementado (versão simplificada)
+5. Restantes (5–9) — incrementalmente, conforme a necessidade

@@ -21,7 +21,7 @@ export default async function PaginaPerfil({ params }) {
   if (!pessoa) notFound()
 
   const souEu = pessoa.id === atual.id
-  const { atividades, subtarefas } = await listarCargaMembro(pessoa.id)
+  const { atividades, subtarefas, entrevistas } = await listarCargaMembro(pessoa.id)
 
   const concluidas = subtarefas.filter((s) => s.status === 'concluida').length
   const semContactos = !pessoa.telefone && !pessoa.whatsapp
@@ -241,6 +241,45 @@ export default async function PaginaPerfil({ params }) {
                       ver atividade
                     </Link>
                   )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      {/* 04 · Entrevistas — participações em entrevistas (convites da coordenação) */}
+      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+        <span className="sec-num">04</span>
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">Entrevistas</h2>
+          <p className="text-[13.5px] text-brand-deep/55 mt-1">
+            {entrevistas.length === 0
+              ? 'Sem convites de entrevista até agora.'
+              : `${entrevistas.filter((e) => e.meu_status === 'confirmado').length} confirmada${entrevistas.filter((e) => e.meu_status === 'confirmado').length === 1 ? '' : 's'} de ${entrevistas.length} convite${entrevistas.length > 1 ? 's' : ''}.`}
+          </p>
+
+          {entrevistas.length > 0 && (
+            <ul className="mt-4">
+              {entrevistas.map((e) => (
+                <li key={e.id} className="border-b border-brand-divider py-3">
+                  <Link
+                    href={`/atividades/${e.id}`}
+                    className="flex flex-wrap items-baseline gap-x-3 gap-y-1 group"
+                  >
+                    <span className="badge badge-tipo-entrevista">Entrevista</span>
+                    <span className="font-semibold text-brand-deep text-[14.5px] group-hover:text-brand-primary transition-colors">
+                      {e.titulo}
+                    </span>
+                    {e.meu_status === 'confirmado' && (
+                      <span className="badge badge-status-confirmado">Confirmado</span>
+                    )}
+                    {e.prazo && (
+                      <span className="text-[12.5px] text-brand-deep/45 tabular-nums ml-auto">
+                        {formatarData(e.prazo)}
+                      </span>
+                    )}
+                  </Link>
                 </li>
               ))}
             </ul>

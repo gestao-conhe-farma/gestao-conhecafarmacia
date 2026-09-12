@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   CheckCircle2,
   ChevronDown,
+  ChevronUp,
   Loader2,
   Pencil,
   Phone,
@@ -113,7 +115,7 @@ function Formulario({ inicial, onGuardar, onCancelar, aGuardar }) {
   )
 }
 
-export default function ListaProfissionais({ iniciais, filtroInicial, verInativos, ehSuper }) {
+export default function ListaProfissionais({ iniciais, historicoEntrevistas = [], filtroInicial, verInativos, ehSuper }) {
   const router = useRouter()
   const [q, setQ] = useState(filtroInicial)
   const [verTodos, setVerTodos] = useState(verInativos)
@@ -121,6 +123,16 @@ export default function ListaProfissionais({ iniciais, filtroInicial, verInativo
   const [idEditando, setIdEditando] = useState(null)
   const [aGuardar, setAGuardar] = useState(false)
   const [erro, setErro] = useState(null)
+  const [historicosAbertos, setHistoricosAbertos] = useState({})
+
+  // Índice: profissional_id → [{ atividade }, …]
+  const historicoPorProfissional = useMemo(() => {
+    const mapa = {}
+    for (const h of historicoEntrevistas) {
+      (mapa[h.profissional_id] ??= []).push(h.atividade)
+    }
+    return mapa
+  }, [historicoEntrevistas])
 
   function pesquisar(e) {
     e?.preventDefault()
@@ -273,6 +285,43 @@ export default function ListaProfissionais({ iniciais, filtroInicial, verInativo
                       <p className="text-[11.5px] text-brand-deep/45 mt-0.5">Disponibilidade: {p.disponibilidade}</p>
                     )}
                     {p.notas && <p className="text-[12px] text-brand-deep/50 italic mt-2">{p.notas}</p>}
+
+                    {/* Histórico de entrevistas dadas — o registo vivo da lista */}
+                    {historicoPorProfissional[p.id]?.length > 0 &&
+                      (() => {
+                        const hist = historicoPorProfissional[p.id]
+                        const aberto = historicosAbertos[p.id]
+                        return (
+                          <div className="mt-2.5">
+                            <button
+                              onClick={() => setHistoricosAbertos((a) => ({ ...a, [p.id]: !a[p.id] }))}
+                              className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-brand-accent hover:underline"
+                            >
+                              {aberto ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                              {hist.length} entrevista{hist.length > 1 ? 's' : ''} dada{hist.length > 1 ? 's' : ''}
+                            </button>
+                            {aberto && (
+                              <ul className="mt-1.5 space-y-1">
+                                {hist.map((a) => (
+                                  <li key={a.id}>
+                                    <Link
+                                      href={`/atividades/${a.id}`}
+                                      className="flex flex-wrap items-baseline gap-x-2 text-[12px] text-brand-deep/65 hover:text-brand-primary transition-colors"
+                                    >
+                                      <span className="font-medium">{a.titulo}</span>
+                                      {a.prazo && (
+                                        <span className="text-brand-deep/40 tabular-nums">
+                                          {new Date(`${String(a.prazo).slice(0, 10)}T12:00:00`).toLocaleDateString('pt-PT')}
+                                        </span>
+                                      )}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })()}
                   </div>
 
                   <div className="flex flex-col gap-1 shrink-0">
