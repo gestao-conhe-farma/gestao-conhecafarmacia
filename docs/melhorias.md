@@ -15,7 +15,7 @@
 | 1 | ~~Notificações (email/badge)~~ | 🔴 Alto | Médio | ✅ Implementado set 2026 — sino + /notificacoes + email via Resend |
 | 2 | Registo de parceiros + **lista de profissionais externos** | 🔴 Alto | Médio | Primeiro a fazer |
 | 3 | Pipeline de conteúdo para redes sociais | 🔴 Alto | Médio/Grande | Planear quando doer |
-| 4 | Fechar o ciclo reunião → ação | 🟠 Médio | Baixo | Primeiro a fazer |
+| 4 | ~~Fechar o ciclo reunião → ação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — data-alvo nos planos + widget "Decisões à espera" |
 | 5 | Reuniões recorrentes (clonar) | 🟠 Médio | Baixo | Quando der |
 | 6 | Backups/exportação | 🟠 Médio | Baixo | Quando der |
 | 7 | PWA (instalável no telemóvel) | 🟡 Baixo | Baixo | Quando der |
@@ -160,10 +160,14 @@ sociais — é o mínimo para a produção não viver em planilhas.
 
 ---
 
-## 4. Fechar o ciclo reunião → ação
+## 4. Fechar o ciclo reunião → ação — ✅ IMPLEMENTADO (setembro 2026)
 
-**Problema:** planos aprovados podem ser convertidos em atividade (bom!), mas
-nada garante que o são. Decisões morrem na ata.
+**Estado:** planos com data-alvo opcional (propaga-se à atividade na conversão);
+widget "Decisões à espera" no painel com as aprovadas sem atividade, mais
+antigas primeiro, codificadas por idade (14/30 dias).
+
+**Problema original:** planos aprovados podiam ser convertidos em atividade
+(bom!), mas nada garantia que o eram. Decisões morriam na ata.
 
 **Proposta:**
 
