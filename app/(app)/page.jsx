@@ -71,6 +71,7 @@ export default async function PaginaInicio({ searchParams }) {
   // Eventos para o calendário de prazos: atividades, subtarefas com prazo
   // e reuniões agendadas. Subtarefas pendentes de aprovação não contam —
   // ainda não são compromisso.
+  const agora = new Date()
   const eventosCalendario = [
     ...datasFuturas.atividades.map((a) => ({
       id: `a-${a.id}`,
@@ -95,7 +96,7 @@ export default async function PaginaInicio({ searchParams }) {
       titulo: r.titulo,
       tipo: 'reuniao',
       prazo: r.data_hora,
-      status: 'aberta',
+      status: new Date(r.data_hora) < agora ? 'concluida' : 'aberta',
       href: `/reunioes/${r.id}`,
     })),
   ]
@@ -107,9 +108,14 @@ export default async function PaginaInicio({ searchParams }) {
     { label: 'Tarefas em curso', valor: subtarefasVisiveis.filter((s) => s.status === 'aprovada').length, icon: Clock },
   ]
 
-  // Reunião em destaque: só aparece quando há reunião agendada na semana
-  // atual (segunda a domingo). A mais próxima da semana entra em cena.
-  const agora = new Date()
+  // Reunião em destaque: a próxima agendada (a partir de agora). Uma reunião
+  // cuja hora já passou sai de cena — o destaque mostra a seguinte, ou nada
+  // se não houver outra.
+  const proximaReuniao = datasFuturas.reunioes
+    .filter((r) => r.estado === 'agendada' && new Date(r.data_hora) >= agora)
+    .sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora))[0]
+
+  // Conteúdo das redes: o que sai nesta semana (segunda → domingo)
   const segundaFeira = new Date(agora)
   segundaFeira.setDate(agora.getDate() - ((agora.getDay() + 6) % 7))
   segundaFeira.setHours(0, 0, 0, 0)
@@ -117,14 +123,6 @@ export default async function PaginaInicio({ searchParams }) {
   domingo.setDate(segundaFeira.getDate() + 6)
   domingo.setHours(23, 59, 59, 999)
 
-  const reuniaoDaSemana = datasFuturas.reunioes
-    .filter((r) => {
-      const d = new Date(r.data_hora)
-      return d >= segundaFeira && d <= domingo
-    })
-    .sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora))[0]
-
-  // Conteúdo das redes: o que sai nesta semana (segunda → domingo)
   const conteudoDaSemana = (conteudoRedes ?? [])
     .filter((c) => {
       if (!c.ativo) return false
@@ -179,7 +177,7 @@ export default async function PaginaInicio({ searchParams }) {
       </div>
 
       {/* Destaque: reunião desta semana (só na semana da reunião) */}
-      {reuniaoDaSemana && <DestaqueReuniao reuniao={reuniaoDaSemana} />}
+      {proximaReuniao && <DestaqueReuniao reuniao={proximaReuniao} />}
 
       {/* Secção: lista editorial */}
       <div className="flex flex-wrap items-center justify-between gap-3 mt-9 mb-4">
@@ -442,7 +440,7 @@ function DestaqueReuniao({ reuniao }) {
 
         <div className="min-w-0 flex-1">
           <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-brand-accent flex items-center gap-2">
-            Reunião esta semana
+            Próxima reunião
           </p>
           <p className="text-[15px] font-bold text-brand-deep mt-1 truncate group-hover:text-brand-primary transition-colors">
             {reuniao.titulo}

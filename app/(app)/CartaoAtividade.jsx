@@ -7,7 +7,7 @@ import { ChevronRight, Clock } from 'lucide-react'
 const ROTULOS = { atividade: 'Atividade', evento: 'Evento', entrevista: 'Entrevista' }
 
 function estadoInfo(atividade) {
-  if (atividade.tipo === 'evento' && atividade.status_evento === 'concluida') {
+  if (atividade.status_evento === 'concluida') {
     return { cor: 'bg-brand-accent', label: 'Concluída' }
   }
   if (atividade.prazo && new Date(atividade.prazo) < new Date()) {

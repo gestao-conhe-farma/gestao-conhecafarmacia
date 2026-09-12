@@ -14,6 +14,7 @@ import ListaSubtarefas from './ListaSubtarefas'
 import FormSubtarefaInline from './FormSubtarefaInline'
 import SecaoEntrevista from './SecaoEntrevista'
 import PainelEvento from './PainelEvento'
+import PainelConclusao from './PainelConclusao'
 import EditarDetalhes from './EditarDetalhes'
 import ListaMateriais from './ListaMateriais'
 
@@ -52,6 +53,7 @@ export default async function PaginaAtividade({ params }) {
   const temSecaoExtra = atividade.tipo === 'entrevista' || atividade.tipo === 'evento'
   const numSubtarefas = temSecaoExtra ? '02' : '01'
   const numNova = temSecaoExtra ? '03' : '02'
+  const numConclusao = temSecaoExtra ? '04' : '03'
 
   return (
     <div className="container-app max-w-4xl">
@@ -67,8 +69,12 @@ export default async function PaginaAtividade({ params }) {
       <header className="page-head">
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className={`badge ${classeTipo(atividade.tipo)}`}>{rotuloTipo(atividade.tipo)}</span>
-          {atividade.tipo === 'evento' && atividade.status_evento && (
-            <span className="badge badge-status-pendente normal-case">
+          {atividade.status_evento && (
+            <span
+              className={`badge normal-case ${
+                atividade.status_evento === 'concluida' ? 'badge-status-concluida' : 'badge-status-pendente'
+              }`}
+            >
               {rotuloEvento(atividade.status_evento)}
             </span>
           )}
@@ -296,6 +302,23 @@ export default async function PaginaAtividade({ params }) {
           </p>
           <div className="mt-5">
             <FormSubtarefaInline atividadeId={id} equipa={equipa} />
+          </div>
+        </div>
+      </section>
+
+      {/* Conclusão — coordenação ou responsável atribuído (paridade com
+          subtarefas). Eventos mantêm o painel próprio com audiência real. */}
+      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+        <span className="sec-num">{numConclusao}</span>
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-brand-deep tracking-tight">Conclusão</h2>
+          <p className="text-[13.5px] text-brand-deep/55 mt-1 leading-relaxed max-w-xl">
+            {atividade.tipo === 'evento'
+              ? 'Marca o evento como realizado. Para registar a audiência real, usa o painel do evento mais acima.'
+              : 'A coordenação e os responsáveis atribuídos podem marcar como concluída — e reabrir, se for preciso.'}
+          </p>
+          <div className="mt-5">
+            <PainelConclusao atividadeId={id} statusEvento={atividade.status_evento} />
           </div>
         </div>
       </section>

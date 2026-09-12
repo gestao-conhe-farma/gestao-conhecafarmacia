@@ -399,3 +399,70 @@ export async function reabrirEvento(atividadeId, novoEstado) {
   revalidatePath(`/atividades/${atividadeId}`)
   return { ok: true }
 }
+
+/**
+ * Concluir uma atividade/evento/entrevista — paridade com subtarefas.
+ * Pode: a coordenação (super_admin) ou o responsável atribuído.
+ * O estado (status_evento) é genérico na base de dados — vale para os
+ * três tipos; eventos continuam a ter o PainelEvento com audiência real.
+ */
+export async function concluirAtividade(atividadeId) {
+  const { pessoa } = await getUtilizadorAtual()
+
+  const supabase = await createClient()
+  const { data: atividade } = await supabase
+    .from('atividades')
+    .select('tipo, atividade_responsaveis(pessoa_id)')
+    .eq('id', atividadeId)
+    .single()
+
+  if (!atividade) return { ok: false, erro: 'Atividade não encontrada.' }
+
+  const ehSuper = pessoa.role === 'super_admin'
+  const ehResponsavel = (atividade.atividade_responsaveis ?? []).some(
+    (r) => r.pessoa_id === pessoa.id
+  )
+  if (!ehSuper && !ehResponsavel) return { ok: false, erro: 'Sem permissão.' }
+
+  const { error } = await supabase
+    .from('atividades')
+    .update({ status_evento: 'concluida' })
+    .eq('id', atividadeId)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath('/')
+  revalidatePath('/atividades')
+  revalidatePath(`/atividades/${atividadeId}`)
+  return { ok: true }
+}
+
+/** Reabrir uma atividade concluída (desfazer conclusão) — mesma permissão. */
+export async function reabrirAtividadeConcluida(atividadeId) {
+  const { pessoa } = await getUtilizadorAtual()
+
+  const supabase = await createClient()
+  const { data: atividade } = await supabase
+    .from('atividades')
+    .select('tipo, atividade_responsaveis(pessoa_id)')
+    .eq('id', atividadeId)
+    .single()
+
+  if (!atividade) return { ok: false, erro: 'Atividade não encontrada.' }
+
+  const ehSuper = pessoa.role === 'super_admin'
+  const ehResponsavel = (atividade.atividade_responsaveis ?? []).some(
+    (r) => r.pessoa_id === pessoa.id
+  )
+  if (!ehSuper && !ehResponsavel) return { ok: false, erro: 'Sem permissão.' }
+
+  const { error } = await supabase
+    .from('atividades')
+    .update({ status_evento: 'em_andamento' })
+    .eq('id', atividadeId)
+
+  if (error) return { ok: false, erro: error.message }
+  revalidatePath('/')
+  revalidatePath('/atividades')
+  revalidatePath(`/atividades/${atividadeId}`)
+  return { ok: true }
+}
