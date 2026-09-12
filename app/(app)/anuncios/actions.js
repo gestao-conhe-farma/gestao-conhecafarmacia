@@ -68,7 +68,7 @@ export async function criarAnuncio(titulo, corpo, reuniaoId = null, link = null)
 
   const { data: anuncio, error } = await supabase
     .from('anuncios')
-    .insert({ titulo: t, corpo: c, reuniao_id: reuniaoId || null, link: caminho, criado_por: pessoa.id })
+    .insert({ titulo: t, corpo: c, reuniao_id: reuniaoId || null, link: caminho, criado_por: atual.pessoa.id })
     .select('id')
     .single()
   if (error) return { ok: false, erro: error.message }
@@ -79,7 +79,7 @@ export async function criarAnuncio(titulo, corpo, reuniaoId = null, link = null)
       .from('pessoas')
       .select('id')
       .eq('ativo', true)
-    await notificar((equipa ?? []).map((p) => p.id).filter((id) => id !== pessoa.id), {
+    await notificar((equipa ?? []).map((p) => p.id).filter((id) => id !== atual.pessoa.id), {
       tipo: 'anuncio_novo',
       titulo: `Anúncio: ${t}`,
       corpo: c.slice(0, 160),
