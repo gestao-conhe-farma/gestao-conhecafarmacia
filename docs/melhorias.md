@@ -16,7 +16,8 @@
 | 2 | ~~Registo de parceiros + **lista de profissionais externos**~~ | 🔴 Alto | Médio | ✅ Implementado set 2026 — /entidades + /profissionais com histórico de entrevistas |
 | 3 | ~~Pipeline de conteúdo para redes sociais~~ | 🔴 Alto | Médio/Grande | ✅ Implementado set 2026 — /conteudo (calendário editorial, versão simplificada) |
 | 4 | ~~Fechar o ciclo reunião → ação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — data-alvo nos planos + widget "Decisões à espera" |
-| 5 | Reuniões recorrentes (clonar) | 🟠 Médio | Baixo | Quando der |
+| 5 | ~~Reuniões recorrentes (clonar)~~ | 🟠 Médio | Baixo | ✅ Já existia — o botão "Regra mensal" gera automaticamente as próximas reuniões pela configuração |
+| 10 | ~~Reuniões privadas da coordenação~~ | 🟠 Médio | Médio | ✅ Implementado set 2026 — visibilidade `equipa`/`coordenacao` com RLS, alternável após criação |
 | 6 | ~~Backups/exportação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — dump semanal automático via GitHub Actions (`.github/workflows/backup.yml`, retenção 90 dias, ver `docs/backups.md`) |
 | 7 | ~~PWA (instalável no telemóvel)~~ | 🟡 Baixo | Baixo | ✅ Implementado set 2026 — manifest + service worker de assets |
 | 8 | Ambiente de staging | 🟡 Baixo | Médio | Antes da próxima mudança de RLS |
@@ -207,11 +208,16 @@ Custo: algumas horas. É o que separa uma ata de um sistema de execução.
 
 ---
 
-## 5. Reuniões recorrentes
+## 5. Reuniões recorrentes — ✅ RESOLVIDO (já existia)
 
-Botão "criar a próxima reunião mensal" na página da reunião: clona
-participantes e estrutura de pauta, avança a data. Remove atrito de todas
-as semanas.
+Verificação de setembro de 2026: a necessidade já está coberta pelo painel
+**"Regra mensal"** em /reunioes — a coordenação configura a recorrência
+(n.ª semana do mês + dia da semana, ou dia fixo do mês) e o botão de geração
+cria automaticamente as próximas reuniões que ainda não existem, evitando
+duplicados. Não é preciso clonar manualmente.
+
+O botão originalmente imaginado ("criar a próxima reunião mensal") ficou
+desnecessário.
 
 ---
 
@@ -266,10 +272,59 @@ select cron.schedule('limpar-login-falhas', '0 3 * * *',
 
 ---
 
+## 10. Reuniões privadas da coordenação — ✅ IMPLEMENTADO (setembro 2026)
+
+**Estado:** migração 0020 (`reunioes_privadas.sql`) + UI em /reunioes.
+Reuniões internas da coordenação (avaliações, assuntos sensíveis) ficam
+invisíveis para o resto da equipa — ao nível da base de dados, não só na UI.
+
+**Como funciona:**
+
+- **Ao criar** ("Nova reunião"): escolha entre **Toda a equipa** (omissão,
+  como sempre) e **Só coordenação**. Numa reunião privada só é possível
+  convocar super_admins — validado no formulário e rejeitado no servidor
+- **Depois de criada**: no cabeçalho da reunião, a coordenação alterna
+  "Tornar privada (só coordenação)" ↔ "Tornar visível a toda a equipa".
+  Ao tornar privada, os convites de membros não-coordenadores são retirados
+  (ninguém fica com convite para uma reunião que não vê); ao abrir,
+  os convites mantêm-se. Fechado após a ata ser publicada
+- **Visibilidade para a coordenação**: badge "Privada — só coordenação" no
+  cabeçalho e "Privada" na lista; abas de filtro **Todas / Toda a equipa /
+  Só coordenação** em /reunioes (no URL, `?vis=coordenacao`)
+
+**Privacidade real (RLS, migração 0020):**
+
+- Coluna `reunioes.visibilidade` (`'equipa'` | `'coordenacao'`, omissão
+  `'equipa'` — nada muda para reuniões antigas)
+- Helper `security definer` `pode_ver_reuniao(uuid)` — o mesmo padrão que
+  corrigiu a recursão das subtarefas (0011), para nunca rebentar com
+  "infinite recursion in policy"
+- Policies de `reunioes` e `reuniao_participantes` filtram pelo helper:
+  um membro que abra o link de uma reunião privada leva **404** — sem
+  título, pauta, notas, ata, participantes ou exportação DOCX/PDF
+- Dashboard ("Próxima reunião") e calendário de prazos herdam o filtro
+  automaticamente
+
+**Limites assumidos:** o título de uma reunião privada pode aparecer em
+notificações de convite (enviadas apenas a super_admins convidados); e a
+contagem de ficheiros do backup vê tudo (o dump é da coordenação, não da
+equipa).
+
+---
+
 ## Ordem sugerida
 
 1. ~~**Notificações**~~ — ✅ implementado
 2. ~~**Parceiros + profissionais externos**~~ — ✅ implementado
 3. ~~**Ciclo reunião → ação**~~ — ✅ implementado
 4. ~~Pipeline de conteúdo~~ — ✅ implementado (versão simplificada)
-5. Restantes (5–9) — incrementalmente, conforme a necessidade
+5. ~~Reuniões recorrentes~~ — ✅ já coberto pela Regra mensal
+6. ~~Backups~~ — ✅ implementado
+7. ~~PWA~~ — ✅ implementado
+10. ~~Reuniões privadas da coordenação~~ — ✅ implementado
+8. **Ambiente de staging** — o próximo mais valioso, antes de novas mudanças de RLS
+9. **Retenção de `login_falhas`** — cinco linhas de pg_cron, quando der
+
+Fora do roteiro ativo: **chat interno** (geral + por atividade) — proposta
+avaliada e arquivada em `docs/chat-proposta.md`, pronta a retomar se a
+equipa decidir avançar.
