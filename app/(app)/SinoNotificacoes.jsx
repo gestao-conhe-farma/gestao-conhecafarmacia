@@ -6,11 +6,14 @@ import Link from 'next/link'
 import { Bell } from 'lucide-react'
 
 /**
- * Sino de notificações (topbar mobile). O número vem do servidor no
- * primeiro render e é revalidado em cada mudança de rota — evita
- * polling e reflete as marcações-como-lidas ao voltar da página.
+ * Sino de notificações. O número vem do servidor no primeiro render e é
+ * revalidado em cada mudança de rota — evita polling e reflete as
+ * marcações-como-lidas ao voltar da página.
+ *
+ * Variantes de estilo: "escuro" (topbar mobile, fundo escuro) e
+ * "claro" (topbar desktop, fundo claro).
  */
-export default function SinoNotificacoes({ inicial = 0 }) {
+export default function SinoNotificacoes({ inicial = 0, variante = 'escuro' }) {
   const pathname = usePathname()
   const [naoLidas, setNaoLidas] = useState(inicial)
 
@@ -27,11 +30,16 @@ export default function SinoNotificacoes({ inicial = 0 }) {
     }
   }, [pathname])
 
+  const classes =
+    variante === 'claro'
+      ? 'relative w-9 h-9 grid place-items-center rounded-lg text-brand-deep/60 hover:bg-brand-primary/10 hover:text-brand-primary transition-colors'
+      : 'relative w-9 h-9 grid place-items-center rounded-lg text-white/75 hover:bg-white/10 hover:text-white transition-colors'
+
   return (
     <Link
       href="/notificacoes"
       aria-label={naoLidas > 0 ? `${naoLidas} notificações por ler` : 'Notificações'}
-      className="relative w-9 h-9 grid place-items-center rounded-lg text-white/75 hover:bg-white/10 hover:text-white transition-colors"
+      className={classes}
     >
       <Bell size={18} />
       {naoLidas > 0 && (

@@ -108,7 +108,6 @@ export default async function AppLayout({ children }) {
               </span>
               <ChevronRight size={15} className="text-white/40 shrink-0" aria-hidden="true" />
             </Link>
-            <BotaoTema variante="sidebar" />
             <BotaoSair />
           </div>
         </div>
@@ -127,6 +126,13 @@ export default async function AppLayout({ children }) {
             {/* Tema e logout vivem no drawer mobile — aqui fica só o sino */}
             <SinoNotificacoes inicial={nNotificacoes ?? 0} />
           </div>
+        </header>
+
+        {/* Topbar desktop: sino + alternar tema (logout e tema continuam
+            também no drawer para mobile; aqui o tema saiu da sidebar) */}
+        <header className="hidden lg:flex sticky top-0 z-40 justify-end items-center gap-1 h-14 px-6 bg-brand-bg-alt/80 backdrop-blur border-b border-brand-divider/60">
+          <SinoNotificacoes inicial={nNotificacoes ?? 0} variante="claro" />
+          <BotaoTema variante="topbar" />
         </header>
 
         <main className="flex-1 py-8 md:py-10 px-5 md:px-10">{children}</main>
