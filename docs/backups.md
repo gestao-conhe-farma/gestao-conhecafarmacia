@@ -41,6 +41,10 @@ por cima das existentes — só usar numa base mesmo perdida.)
 - Ligação feita pelo **pooler de sessão IPv4** (`aws-1-eu-west-1.pooler
   .supabase.com`) — os runners do GitHub não chegam ao host direto
   `db.*.supabase.co`, que é só IPv6.
+- **Versão do cliente:** o workflow pergunta ao servidor a versão major
+  (`SHOW server_version_num`) e instala o `postgresql-client` PGDG dessa
+  versão — o `pg_dump` tem de ser igual ou mais novo que o servidor.
+  Funciona sozinho se o Supabase subir de versão (17 → 18, etc.).
 - O ficheiro de dump **nunca passa por third parties**: vive dentro do
   repositório privado do GitHub como artefacto do run.
 - Storage (ficheiros do bucket `documentos`, atas em PDF/Word) continua a

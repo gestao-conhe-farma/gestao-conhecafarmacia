@@ -32,10 +32,39 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Instalar cliente PostgreSQL
+      - name: Detetar versão do servidor e instalar o cliente certo
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
+          # pg_dump tem de ser da mesma versão major do servidor (ou mais
+          # nova). O ubuntu-latest traz o cliente 16; o Supabase corre 17+
+          # — e um dia corre 18. Em vez de fixar uma versão, perguntamos
+          # ao servidor (qualquer psql liga para isto) e instalamos o
+          # cliente PGDG correspondente.
+          export PGHOST="aws-1-eu-west-1.pooler.supabase.com"
+          export PGPORT="5432"
+          export PGUSER="postgres.zmvqtawocfixphqikndn"
+          export PGDATABASE="postgres"
+          export PGPASSWORD="$SUPABASE_DB_PASSWORD"
+          export PGCONNECT_TIMEOUT="15"
+
+          VER_NUM="$(psql -tAc 'SHOW server_version_num;')"
+          MAJOR="$((VER_NUM / 10000))"
+          echo "SERVER_MAJOR=$MAJOR" >> "$GITHUB_ENV"
+          echo "Servidor PostgreSQL major: $MAJOR — a instalar cliente $MAJOR"
+
+          # Repo PGDG (tem clientes de todas as versões atuais)
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
+          sudo apt-get install -y -qq "postgresql-client-$MAJOR"
+
+          # pg_dump/pg_restore do cliente certo primeiro no PATH
+          echo "/usr/lib/postgresql/$MAJOR/bin" >> "$GITHUB_PATH"
 
       - name: Fazer o dump (formato custom, comprimido)
         env:
