@@ -1,0 +1,108 @@
+name: Backup Supabase
+
+# Backup semanal da base de dados PostgreSQL (Supabase) em formato
+# customizado pg_dump. Corre automaticamente às domingo e pode ser
+# lançado à mão em qualquer altura (Run workflow).
+#
+# Segredos necessários (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_PASSWORD      — password da base (credenciais.txt, secção SUPABASE)
+#   SUPABASE_SERVICE_ROLE_KEY — opcional: se presente, o run conta também
+#     os ficheiros no bucket de storage 'documentos' (verificação de saúde).
+#
+# Retenção: os artefactos são guardados por 90 dias (GitHub apaga sozinho
+# depois disso — ver o passo upload-artifact).
+
+on:
+  schedule:
+    # Domingos às 04:00 UTC (= 05:00 em Portugal continental)
+    - cron: "0 4 * * 0"
+  workflow_dispatch: {}
+
+# Um backup de cada vez; nunca cancela um a meio em favor de outro
+concurrency:
+  group: backup-supabase
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Instalar cliente PostgreSQL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Fazer o dump (formato custom, comprimido)
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          # Pooler de sessão (aws-1, IPv4) — os runners do GitHub não falam IPv6,
+          # por isso o host direto db.*.supabase.co não é acessível daqui.
+          export PGHOST="aws-1-eu-west-1.pooler.supabase.com"
+          export PGPORT="5432"
+          export PGUSER="postgres.zmvqtawocfixphqikndn"
+          export PGDATABASE="postgres"
+          export PGPASSWORD="$SUPABASE_DB_PASSWORD"
+          export PGCONNECT_TIMEOUT="15"
+
+          STAMP="$(date -u +%Y%m%d-%H%M)"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+
+          pg_dump \
+            --format=custom \
+            --compress=6 \
+            --no-owner \
+            --no-privileges \
+            --file="gestao-$STAMP.dump"
+
+          # Integridade: o arquivo tem de ser legível e conter dados
+          pg_restore --list "gestao-$STAMP.dump" > /dev/null
+          TABELAS="$(pg_restore --list "gestao-$STAMP.dump" | grep -c 'TABLE DATA' || true)"
+          if [ "${TABELAS:-0}" -lt 5 ]; then
+            echo "::error::Dump suspeito — só $TABELAS tabelas com dados (esperado ≥5)."
+            exit 1
+          fi
+          echo "TABELAS=$TABELAS" >> "$GITHUB_ENV"
+          ls -lh "gestao-$STAMP.dump"
+
+      - name: Verificação opcional do bucket de storage
+        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        env:
+          SUPABASE_URL: https://zmvqtawocfixphqikndn.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # Contagem de objetos no bucket 'documentos' — só sinal de vida,
+          # os ficheiros em si continuam no Supabase (cópia completa dos
+          # binários fica para uma fase posterior, se for preciso).
+          curl -sS --max-time 20 \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            "$SUPABASE_URL/storage/v1/object/list/documentos?limit=1&count=exact" \
+            | head -c 400 || echo "(verificação do bucket falhou — não bloqueia o backup)"
+
+      - name: Guardar o backup como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: gestao-db-${{ env.STAMP }}
+          path: gestao-*.dump
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Resumo do run
+        run: |
+          {
+            echo "## Backup concluído ✅"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Ficheiro | \`gestao-${STAMP}.dump\` |"
+            echo "| Tabelas com dados | $TABELAS |"
+            echo "| Retenção | 90 dias |"
+            echo ""
+            echo "Restaurar: \`pg_restore -h <host> -U postgres.zmvqtawocfixphqikndn -d postgres --clean --if-exists gestao-${STAMP}.dump\`"
+          } >> "$GITHUB_STEP_SUMMARY"

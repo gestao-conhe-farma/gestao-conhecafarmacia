@@ -17,7 +17,7 @@
 | 3 | ~~Pipeline de conteúdo para redes sociais~~ | 🔴 Alto | Médio/Grande | ✅ Implementado set 2026 — /conteudo (calendário editorial, versão simplificada) |
 | 4 | ~~Fechar o ciclo reunião → ação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — data-alvo nos planos + widget "Decisões à espera" |
 | 5 | Reuniões recorrentes (clonar) | 🟠 Médio | Baixo | Quando der |
-| 6 | Backups/exportação | 🟠 Médio | Baixo | Quando der |
+| 6 | ~~Backups/exportação~~ | 🟠 Médio | Baixo | ✅ Implementado set 2026 — dump semanal automático via GitHub Actions (`.github/workflows/backup.yml`, retenção 90 dias, ver `docs/backups.md`) |
 | 7 | ~~PWA (instalável no telemóvel)~~ | 🟡 Baixo | Baixo | ✅ Implementado set 2026 — manifest + service worker de assets |
 | 8 | Ambiente de staging | 🟡 Baixo | Médio | Antes da próxima mudança de RLS |
 | 9 | Retenção de `login_falhas` (pg_cron) | 🟡 Baixo | Muito baixo | Quando der |
@@ -215,17 +215,16 @@ as semanas.
 
 ---
 
-## 6. Backups / exportação
+## 6. Backups / exportação — ✅ IMPLEMENTADO (setembro 2026)
 
-Documentos e atas são a memória da organização; o plano gratuito do Supabase
-não inclui backups retidos. Proposta: rotina mensal (mesmo manual, via CLI):
+**Estado:** dump completo automático todos os domingos às 04:00 UTC via
+GitHub Actions (`.github/workflows/backup.yml`) — formato customizado comprimido do `pg_dump`, verificação de integridade (≥5 tabelas com dados)
+e retenção de 90 dias como artefacto do run. Operação e restauro em
+`docs/backups.md`. O bucket de storage tem verificação de contagem no run
+(cópia dos binários do storage ficou para uma fase posterior).
 
-```bash
-supabase db dump -f backup-$(date +%Y%m).sql
-# + cópia do bucket documentos (storage)
-```
-
-Idealmente anotado num lembrete do próprio sistema (novas notificações! 🙂).
+O Supabase continua a ser a fonte única — os dumps são a rede de segurança
+contra perda total (conta suspensa, apagão, erro de migração grave).
 
 ---
 
