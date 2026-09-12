@@ -26,7 +26,7 @@ export default async function PaginaInicio({ searchParams }) {
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 
-  const [atividades, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes] = await Promise.all([
+  const [atividadesBrutas, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes] = await Promise.all([
     listarAtividades({ tipo }),
     listarSubtarefas({}),
     pessoa.role === 'super_admin'
@@ -35,6 +35,16 @@ export default async function PaginaInicio({ searchParams }) {
     listarDatasFuturas(),
     listarPlanosSemAtividade(),
   ])
+
+  // Secção "O que está a acontecer": por data, do mais próximo ao mais
+  // distante (ordenação do cartão — a coluna de data é o prazo). Atividades
+  // sem prazo vão para o fim; empates mantêm a ordem de criação (sort estável).
+  const atividades = [...atividadesBrutas].sort((a, b) => {
+    if (!a.prazo && !b.prazo) return 0
+    if (!a.prazo) return 1
+    if (!b.prazo) return -1
+    return new Date(a.prazo) - new Date(b.prazo)
+  })
 
   // Decisões aprovadas sem atividade, com a idade da decisão —
   // as mais antigas primeiro (são as que morrem esquecidas)
