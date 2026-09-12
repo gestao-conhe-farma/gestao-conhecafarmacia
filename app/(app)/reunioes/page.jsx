@@ -4,23 +4,33 @@ import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarReunioes, obterConfiguracaoReunioes } from '@/lib/dados'
 import ListaReunioes from './ListaReunioes'
 import PainelRecorrencia from './PainelRecorrencia'
+import AbasVisibilidade from './AbasVisibilidade'
 
 export const metadata = { title: 'Reuniões' }
 
-export default async function PaginaReunioes() {
+export default async function PaginaReunioes({ searchParams }) {
   const { pessoa } = await exigirUtilizador()
   const ehSuper = pessoa.role === 'super_admin'
 
-  const [reunioes, config] = await Promise.all([
+  const [reunioes, config, params] = await Promise.all([
     listarReunioes(),
     obterConfiguracaoReunioes(),
+    searchParams,
   ])
 
+  // Abas de visibilidade — só a coordenação as vê/usa
+  const abaVis = ehSuper && ['equipa', 'coordenacao'].includes(params?.vis)
+    ? params.vis
+    : 'todas'
+
   const agora = new Date()
-  const futuras = reunioes
+  const visiveis = abaVis === 'todas'
+    ? reunioes
+    : reunioes.filter((r) => (r.visibilidade ?? 'equipa') === abaVis)
+  const futuras = visiveis
     .filter((r) => r.estado === 'agendada' && new Date(r.data_hora) >= agora)
     .reverse()
-  const passadas = reunioes.filter(
+  const passadas = visiveis.filter(
     (r) => r.estado !== 'agendada' || new Date(r.data_hora) < agora
   )
 
@@ -59,6 +69,13 @@ export default async function PaginaReunioes() {
         </div>
       )}
 
+      {/* Abas de visibilidade — só coordenação */}
+      {ehSuper && (
+        <div className="mt-2">
+          <AbasVisibilidade atual={abaVis} />
+        </div>
+      )}
+
       {/* Próximas */}
       <section className="mt-9">
         <h2 className="text-lg font-bold text-brand-deep mb-3">
@@ -68,11 +85,15 @@ export default async function PaginaReunioes() {
         {futuras.length === 0 ? (
           <div className="card empty-state border-dashed">
             <CalendarDays size={34} className="mx-auto mb-3 text-brand-accent/50" />
-            <p className="font-semibold text-brand-deep">Sem reuniões agendadas</p>
+            <p className="font-semibold text-brand-deep">
+              {abaVis === 'coordenacao' ? 'Sem reuniões privadas' : 'Sem reuniões agendadas'}
+            </p>
             <p className="text-sm mt-1">
-              {ehSuper
-                ? 'Define a regra mensal ou cria a primeira reunião.'
-                : 'Quando a coordenação convocar uma reunião, aparece aqui.'}
+              {abaVis === 'coordenacao'
+                ? 'Cria uma reunião com a visibilidade “Só coordenação” para a ver aqui.'
+                : ehSuper
+                  ? 'Define a regra mensal ou cria a primeira reunião.'
+                  : 'Quando a coordenação convocar uma reunião, aparece aqui.'}
             </p>
           </div>
         ) : (
