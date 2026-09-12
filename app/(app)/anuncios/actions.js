@@ -40,8 +40,9 @@ function linkValido(link) {
 
 /** Criar anúncio e avisar toda a equipa ativa (in-app + email). */
 export async function criarAnuncio(titulo, corpo, reuniaoId = null, link = null) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  if (atual.pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const t = tituloValido(titulo)
   const c = corpoValido(corpo)
@@ -95,8 +96,9 @@ export async function criarAnuncio(titulo, corpo, reuniaoId = null, link = null)
 
 /** Desativar anúncio (deixa de aparecer; histórico mantém). */
 export async function apagarAnuncio(anuncioId) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  if (atual.pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
   const { error } = await supabase
