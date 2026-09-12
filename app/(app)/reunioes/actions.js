@@ -445,7 +445,7 @@ export async function apagarNota(reuniaoId, notaId) {
 }
 
 /** Criar plano (super_admin). */
-export async function criarPlano(reuniaoId, { titulo, descricao }) {
+export async function criarPlano(reuniaoId, { titulo, descricao, prazo }) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (!titulo?.trim()) return { ok: false, erro: 'O título do plano é obrigatório.' }
@@ -455,6 +455,7 @@ export async function criarPlano(reuniaoId, { titulo, descricao }) {
     reuniao_id: reuniaoId,
     titulo: titulo.trim(),
     descricao: descricao?.trim() || null,
+    prazo: prazo || null,
     criado_por: pessoa.id,
   })
   if (error) return { ok: false, erro: error.message }
@@ -525,7 +526,7 @@ export async function converterPlano(reuniaoId, planoId, { tipo, prazo, responsa
   const supabase = await createClient()
   const { data: plano } = await supabase
     .from('reuniao_planos')
-    .select('titulo, descricao, decisao, atividade_id')
+    .select('titulo, descricao, prazo, decisao, atividade_id')
     .eq('id', planoId)
     .single()
 
@@ -535,13 +536,15 @@ export async function converterPlano(reuniaoId, planoId, { tipo, prazo, responsa
   }
   if (plano.atividade_id) return { ok: false, erro: 'Este plano já foi convertido.' }
 
+  // O prazo do plano é o fallback: se a coordenação não indicar outro
+  // na conversão, a data-alvo da decisão propaga-se para a atividade.
   const { data: atividade, error } = await supabase
     .from('atividades')
     .insert({
       titulo: plano.titulo,
       descricao: plano.descricao,
       tipo: tipo === 'evento' ? 'evento' : 'atividade',
-      prazo: prazo || null,
+      prazo: prazo || plano.prazo || null,
       criado_por: pessoa.id,
       status_evento: tipo === 'evento' ? 'planeada' : null,
       reuniao_origem: reuniaoId,

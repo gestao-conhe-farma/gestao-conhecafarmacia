@@ -28,6 +28,7 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
   const [novoAberto, setNovoAberto] = useState(false)
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
+  const [prazoNovo, setPrazoNovo] = useState('')
   const [convertendo, setConvertendo] = useState(null) // planoId quando mini-form aberto
   const [aviso, setAviso] = useState(null)
   const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
@@ -45,10 +46,11 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
 
   async function criarNovo(e) {
     e.preventDefault()
-    await acao(() => criarPlano(reuniaoId, { titulo, descricao }), 'novo')
+    await acao(() => criarPlano(reuniaoId, { titulo, descricao, prazo: prazoNovo || null }), 'novo')
     setNovoAberto(false)
     setTitulo('')
     setDescricao('')
+    setPrazoNovo('')
   }
 
   return (
@@ -89,6 +91,15 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
             />
+            <div>
+              <label className="form-label">Data-alvo (opcional — propaga-se à atividade na conversão)</label>
+              <input
+                type="datetime-local"
+                className="form-input"
+                value={prazoNovo}
+                onChange={(e) => setPrazoNovo(e.target.value)}
+              />
+            </div>
             <button type="submit" disabled={aProcessar === 'novo'} className="btn btn-primary btn-small">
               {aProcessar === 'novo' && <Loader2 size={14} className="animate-spin" />}
               Adicionar plano
@@ -123,6 +134,9 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
                       )}
                       <p className="text-[11px] text-brand-deep/40 mt-2">
                         proposto por {plano.criado_por?.nome}
+                        {plano.prazo && (
+                          <> · data-alvo {new Date(plano.prazo).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })}</>
+                        )}
                       </p>
                     </div>
                     <span
@@ -252,7 +266,13 @@ export default function SecaoPlanos({ reuniaoId, planos, equipa, pessoaAtualId, 
 /** Mini-form: tipo + prazo + responsáveis → cria atividade/evento ligado. */
 function MiniFormConversao({ plano, equipa, reuniaoId, onConcluido, aProcessar, setAProcessar, acao }) {
   const [tipo, setTipo] = useState('atividade')
-  const [prazo, setPrazo] = useState('')
+  // Pré-preenchido com a data-alvo da decisão, se existir
+  const [prazo, setPrazo] = useState(() => {
+    if (!plano.prazo) return ''
+    const d = new Date(plano.prazo)
+    const pad = (n) => n.toString().padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  })
   const [responsaveis, setResponsaveis] = useState([])
 
   return (

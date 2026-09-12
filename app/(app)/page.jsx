@@ -5,6 +5,7 @@ import {
   listarAtividades,
   listarSubtarefas,
   listarDatasFuturas,
+  listarPlanosSemAtividade,
   formatarData,
 } from '@/lib/dados'
 import CartaoAtividade from './CartaoAtividade'
@@ -25,14 +26,26 @@ export default async function PaginaInicio({ searchParams }) {
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 
-  const [atividades, minhasSubtarefas, aAprovar, datasFuturas] = await Promise.all([
+  const [atividades, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes] = await Promise.all([
     listarAtividades({ tipo }),
     listarSubtarefas({}),
     pessoa.role === 'super_admin'
       ? listarSubtarefas({ status: 'pendente_aprovacao' })
       : Promise.resolve([]),
     listarDatasFuturas(),
+    listarPlanosSemAtividade(),
   ])
+
+  // Decisões aprovadas sem atividade, com a idade da decisão —
+  // as mais antigas primeiro (são as que morrem esquecidas)
+  const decisoesAbertas = planosPendentes
+    .map((p) => ({
+      ...p,
+      dias: Math.floor(
+        (Date.now() - new Date(p.decidido_em ?? p.criado_em).getTime()) / 86400000
+      ),
+    }))
+    .sort((a, b) => b.dias - a.dias)
 
   const subtarefasVisiveis = minhasSubtarefas.filter((s) =>
     ['aprovada', 'concluida', 'cancelada', 'erro'].includes(s.status)
@@ -262,6 +275,55 @@ export default async function PaginaInicio({ searchParams }) {
                 Rever {aAprovar.length} tarefa{aAprovar.length > 1 ? 's' : ''}
               </Link>
             </div>
+          )}
+        </div>
+
+        {/* Decisões aprovadas que ainda não viraram atividade — o ciclo
+            reunião → ação fechado à vista de toda a equipa */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-base font-bold text-brand-deep">
+              <span className="text-brand-accent text-[11px] font-bold tracking-[0.14em] mr-2.5">03</span>
+              Decisões à espera
+            </h3>
+            {decisoesAbertas.length > 0 && (
+              <span className="badge badge-status-pendente normal-case">
+                {decisoesAbertas.length}
+              </span>
+            )}
+          </div>
+          {decisoesAbertas.length === 0 ? (
+            <p className="text-sm text-brand-deep/50 py-8 text-center">
+              Toda a decisão aprovada já tem atividade. Boa.
+            </p>
+          ) : (
+            <ul className="divide-y divide-brand-divider/70">
+              {decisoesAbertas.slice(0, 6).map((p) => (
+                <li key={p.id} className="py-3.5 flex items-center gap-3">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      p.dias >= 30 ? 'bg-red-600' : p.dias >= 14 ? 'bg-amber-500' : 'bg-brand-accent'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-brand-deep truncate">
+                      {p.titulo}
+                    </p>
+                    <p className="text-xs text-brand-deep/50">
+                      {p.reuniao?.titulo} · há {p.dias} dia{p.dias === 1 ? '' : 's'}
+                      {p.prazo && ` · alvo ${formatarData(p.prazo)}`}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/reunioes/${p.reuniao?.id}`}
+                    className="text-[11.5px] font-semibold text-brand-accent hover:underline shrink-0"
+                  >
+                    Ver
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
