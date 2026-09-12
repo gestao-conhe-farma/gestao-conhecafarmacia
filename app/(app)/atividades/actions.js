@@ -1,5 +1,7 @@
 'use server'
 
+import { notificar, semAutor } from '@/lib/notificacoes'
+
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -71,6 +73,13 @@ export async function criarAtividade(payload) {
       }))
     )
     if (errPart) return { ok: false, erro: errPart.message }
+
+    notificar(semAutor(participantes, pessoa.id), {
+      tipo: 'entrevista_convite',
+      titulo: `Convite para entrevista: ${titulo.trim()}`,
+      corpo: prazo ? `Marcada para ${new Date(prazo).toLocaleString('pt-PT', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}` : null,
+      link: `/atividades/${atividadeId}`,
+    })
   }
 
   revalidatePath('/')
@@ -192,6 +201,21 @@ export async function convidarParticipantes(atividadeId, pessoaIds) {
   )
 
   if (error) return { ok: false, erro: error.message }
+
+  const { data: atividade } = await supabase
+    .from('atividades')
+    .select('titulo, prazo')
+    .eq('id', atividadeId)
+    .single()
+  if (atividade) {
+    notificar(semAutor(pessoaIds, pessoa.id), {
+      tipo: 'entrevista_convite',
+      titulo: `Convite para entrevista: ${atividade.titulo}`,
+      corpo: atividade.prazo ? `Marcada para ${new Date(atividade.prazo).toLocaleString('pt-PT', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}` : null,
+      link: `/atividades/${atividadeId}`,
+    })
+  }
+
   revalidatePath(`/atividades/${atividadeId}`)
   return { ok: true }
 }

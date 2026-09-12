@@ -1,5 +1,7 @@
 'use server'
 
+import { notificar, semAutor } from '@/lib/notificacoes'
+
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BUCKET } from '@/lib/documentos'
@@ -121,6 +123,13 @@ export async function criarReuniao(payload) {
       participantes.map((pessoa_id) => ({ reuniao_id: data.id, pessoa_id, status: 'convidado' }))
     )
     if (errPart) return { ok: false, erro: errPart.message }
+
+    notificar(semAutor(participantes, pessoa.id), {
+      tipo: 'reuniao_convite',
+      titulo: `Convite: ${titulo.trim()}`,
+      corpo: `${new Date(dataHora).toLocaleString('pt-PT', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}${local?.trim() ? ` · ${local.trim()}` : ''}`,
+      link: `/reunioes/${data.id}`,
+    })
   }
 
   revalidatePath('/reunioes')
@@ -189,6 +198,21 @@ export async function convocarParticipantes(reuniaoId, pessoaIds) {
     { onConflict: 'reuniao_id,pessoa_id', ignoreDuplicates: true }
   )
   if (error) return { ok: false, erro: error.message }
+
+  const { data: reuniao } = await supabase
+    .from('reunioes')
+    .select('titulo, data_hora, local')
+    .eq('id', reuniaoId)
+    .single()
+  if (reuniao) {
+    notificar(semAutor(pessoaIds, pessoa.id), {
+      tipo: 'reuniao_convite',
+      titulo: `Convite: ${reuniao.titulo}`,
+      corpo: `${new Date(reuniao.data_hora).toLocaleString('pt-PT', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}${reuniao.local ? ` · ${reuniao.local}` : ''}`,
+      link: `/reunioes/${reuniaoId}`,
+    })
+  }
+
   revalidatePath(`/reunioes/${reuniaoId}`)
   return { ok: true }
 }
@@ -564,6 +588,19 @@ export async function publicarResumo(reuniaoId, resumo) {
     .eq('id', reuniaoId)
 
   if (error) return { ok: false, erro: error.message }
+
+  // A ata é publicada — avisar todos os convocados
+  const { data: parts } = await supabase
+    .from('reuniao_participantes')
+    .select('pessoa_id')
+    .eq('reuniao_id', reuniaoId)
+  notificar(semAutor(parts?.map((p) => p.pessoa_id), pessoa.id), {
+    tipo: 'ata_publicada',
+    titulo: 'Ata publicada',
+    corpo: 'O resumo final da reunião já está disponível.',
+    link: `/reunioes/${reuniaoId}`,
+  })
+
   revalidatePath(`/reunioes/${reuniaoId}`)
   revalidatePath('/reunioes')
   return { ok: true }
@@ -595,6 +632,19 @@ export async function cancelarReuniao(reuniaoId) {
     .update({ estado: 'cancelada' })
     .eq('id', reuniaoId)
   if (error) return { ok: false, erro: error.message }
+
+  // Avisar os convocados do cancelamento
+  const { data: parts } = await supabase
+    .from('reuniao_participantes')
+    .select('pessoa_id')
+    .eq('reuniao_id', reuniaoId)
+  notificar(semAutor(parts?.map((p) => p.pessoa_id), pessoa.id), {
+    tipo: 'reuniao_cancelada',
+    titulo: 'Reunião cancelada',
+    corpo: 'A reunião para que foste convocado foi cancelada.',
+    link: `/reunioes/${reuniaoId}`,
+  })
+
   revalidatePath(`/reunioes/${reuniaoId}`)
   revalidatePath('/reunioes')
   return { ok: true }

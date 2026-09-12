@@ -2,6 +2,7 @@
 
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { notificar, semAutor } from '@/lib/notificacoes'
 
 /**
  * Criar subtarefa. Admin (membro) ou super_admin.
@@ -35,6 +36,13 @@ export async function criarSubtarefa(payload) {
       responsaveis.map((pessoa_id) => ({ subtarefa_id: id, pessoa_id }))
     )
     if (errResp) return { ok: false, erro: errResp.message }
+
+    notificar(semAutor(responsaveis, pessoa.id), {
+      tipo: 'subtarefa_atribuida',
+      titulo: `Nova tarefa: ${titulo.trim()}`,
+      corpo: 'Foste atribuído a uma subtarefa.',
+      link: atividadeId ? `/atividades/${atividadeId}` : '/',
+    })
   }
 
   revalidatePath('/')

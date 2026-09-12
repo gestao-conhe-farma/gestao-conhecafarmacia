@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Plus, ChevronRight } from 'lucide-react'
 import NavLateral from './NavLateral'
 import DrawerMobile from './DrawerMobile'
+import SinoNotificacoes from './SinoNotificacoes'
 import BotaoTema from './BotaoTema'
 import BotaoSair from './BotaoSair'
 import VigiaSessao from './VigiaSessao'
@@ -39,6 +40,13 @@ export default async function AppLayout({ children }) {
   const nPendentes = pendentes?.count ?? 0
   const nConvites = convites?.count ?? 0
   const nConvocorias = reunioesPendentes?.count ?? 0
+
+  // Não lidas para o badge do sino
+  const { count: nNotificacoes } = await supabase
+    .from('notificacoes')
+    .select('id', { count: 'exact', head: true })
+    .eq('pessoa_id', pessoa.id)
+    .eq('lida', false)
 
   const items = [
     { href: '/', label: 'Início', icon: 'inicio' },
@@ -98,6 +106,7 @@ export default async function AppLayout({ children }) {
               </span>
               <ChevronRight size={15} className="text-white/40 shrink-0" aria-hidden="true" />
             </Link>
+            <BotaoTema variante="sidebar" />
             <BotaoSair />
           </div>
         </div>
@@ -113,8 +122,8 @@ export default async function AppLayout({ children }) {
             <img src="/logo/logo-principal-branco.svg" alt="Conheça Farmácia" className="h-7" />
           </Link>
           <div className="flex items-center gap-1">
-            <BotaoTema />
-            <BotaoSair />
+            {/* Tema e logout vivem no drawer mobile — aqui fica só o sino */}
+            <SinoNotificacoes inicial={nNotificacoes ?? 0} />
           </div>
         </header>
 
