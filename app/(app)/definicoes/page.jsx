@@ -32,6 +32,11 @@ export default async function PaginaDefinicoes() {
     { num: '04', titulo: 'Palavra-passe', descricao: 'Ao alterar, as sessões noutros dispositivos são terminadas automaticamente.', corpo: <CartaoPalavraPasse /> },
     { num: '05', titulo: 'Aparência', descricao: 'O tema é guardado neste dispositivo.', corpo: <CartaoAparencia /> },
     { num: '06', titulo: 'Sessão', descricao: 'Termina a sessão neste dispositivo ou em todos os dispositivos onde a conta está ativa.', corpo: <CartaoSessao /> },
+    { num: '07', titulo: 'Ajuda', descricao: 'O guia completo da plataforma: tudo o que a app faz e como usar no dia a dia.', corpo: (
+      <a href="/guia" className="btn btn-ghost btn-small border border-brand-divider">
+        Abrir o guia da plataforma
+      </a>
+    ) },
   ]
 
   return (

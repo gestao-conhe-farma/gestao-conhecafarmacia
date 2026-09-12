@@ -159,7 +159,10 @@ export default async function AppLayout({ children }) {
 
         <footer className="px-6 md:px-10 py-5 text-[11.5px] text-brand-deep/40 flex items-center justify-between border-t border-brand-divider/60">
           <span>Conheça Farmácia · Plataforma de gestão interna</span>
-          <span className="hidden sm:inline">Acesso restrito à equipa</span>
+          <span className="hidden sm:inline flex items-center gap-4">
+            <Link href="/guia" className="hover:text-brand-primary transition-colors">Guia da plataforma</Link>
+            <span>Acesso restrito à equipa</span>
+          </span>
         </footer>
       </div>
     </div>

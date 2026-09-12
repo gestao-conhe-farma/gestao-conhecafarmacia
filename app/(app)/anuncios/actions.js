@@ -25,8 +25,21 @@ function corpoValido(t) {
   return v.slice(0, 4000)
 }
 
+/**
+ * Ligação opcional do anúncio — só caminhos internos da app (começam
+ * por "/"): entra num href, por isso URLs externos e javascript: ficam
+ * de fora. Devolve o caminho limpo ou null.
+ */
+function linkValido(link) {
+  const l = (link ?? '').trim()
+  if (!l) return null
+  if (!l.startsWith('/')) return null
+  if (l.startsWith('//') || l.includes('<') || l.includes('"')) return null
+  return l.slice(0, 300)
+}
+
 /** Criar anúncio e avisar toda a equipa ativa (in-app + email). */
-export async function criarAnuncio(titulo, corpo, reuniaoId = null) {
+export async function criarAnuncio(titulo, corpo, reuniaoId = null, link = null) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
@@ -34,6 +47,10 @@ export async function criarAnuncio(titulo, corpo, reuniaoId = null) {
   const c = corpoValido(corpo)
   if (!t) return { ok: false, erro: 'O anúncio precisa de um título.' }
   if (!c) return { ok: false, erro: 'O anúncio está vazio.' }
+  const caminho = linkValido(link)
+  if (link && link.trim() && !caminho) {
+    return { ok: false, erro: 'A ligação tem de ser um caminho interno (começa por /). Ex.: /guia' }
+  }
 
   const supabase = await createClient()
 
@@ -50,7 +67,7 @@ export async function criarAnuncio(titulo, corpo, reuniaoId = null) {
 
   const { data: anuncio, error } = await supabase
     .from('anuncios')
-    .insert({ titulo: t, corpo: c, reuniao_id: reuniaoId || null, criado_por: pessoa.id })
+    .insert({ titulo: t, corpo: c, reuniao_id: reuniaoId || null, link: caminho, criado_por: pessoa.id })
     .select('id')
     .single()
   if (error) return { ok: false, erro: error.message }

@@ -15,6 +15,7 @@ export default function FormAnuncio() {
   const [aberto, setAberto] = useState(false)
   const [titulo, setTitulo] = useState('')
   const [corpo, setCorpo] = useState('')
+  const [link, setLink] = useState('')
   const [erro, setErro] = useState(null)
   const [aEnviar, iniciarEnvio] = useTransition()
 
@@ -24,13 +25,14 @@ export default function FormAnuncio() {
     const c = corpo.trim()
     if (!t || !c) return
     iniciarEnvio(async () => {
-      const r = await criarAnuncio(t, c)
+      const r = await criarAnuncio(t, c, null, link.trim() || null)
       if (!r.ok) {
         setErro(r.erro)
         return
       }
       setTitulo('')
       setCorpo('')
+      setLink('')
       setAberto(false)
       router.refresh()
     })
@@ -63,6 +65,30 @@ export default function FormAnuncio() {
         value={corpo}
         onChange={(e) => setCorpo(e.target.value)}
       />
+      <div>
+        <label className="block text-[12px] font-semibold text-brand-deep/60 mb-1">
+          Ligação opcional (página interna)
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <input
+            className="form-input flex-1 min-w-[220px]"
+            maxLength={300}
+            placeholder="/guia — o link aparece como “clica aqui” no anúncio"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+          />
+          {link !== '/guia' && (
+            <button
+              type="button"
+              onClick={() => setLink('/guia')}
+              className="btn btn-small btn-ghost border border-brand-divider"
+              title="Preenche com o guia da plataforma"
+            >
+              Apontar para o guia
+            </button>
+          )}
+        </div>
+      </div>
       {erro && <p className="text-sm text-red-600">{erro}</p>}
       <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={aEnviar || !titulo.trim() || !corpo.trim()} className="btn btn-primary btn-small">

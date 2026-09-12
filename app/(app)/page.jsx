@@ -478,7 +478,7 @@ function DestaqueReuniao({ reuniao }) {
 function BandaAnuncio({ anuncio, total }) {
   return (
     <a
-      href="/anuncios"
+      href={anuncio.link || '/anuncios'}
       className="group block mt-6 border-y border-brand-accent/30 bg-brand-accent/[0.06] hover:bg-brand-accent/[0.09] transition-colors"
     >
       <div className="flex items-center gap-4 py-4 px-1">

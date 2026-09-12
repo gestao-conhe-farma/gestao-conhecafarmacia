@@ -1,4 +1,4 @@
-import { Megaphone } from 'lucide-react'
+import { ArrowRight, Megaphone } from 'lucide-react'
 import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarAnuncios, formatarData } from '@/lib/dados'
 import FormAnuncio, { BotaoRemoverAnuncio } from './FormAnuncio'
@@ -64,6 +64,16 @@ export default async function PaginaAnuncios() {
               <p className="text-sm leading-relaxed text-brand-deep/85 whitespace-pre-line mt-3">
                 {a.corpo}
               </p>
+
+              {a.link && (
+                <a
+                  href={a.link}
+                  className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-brand-accent hover:underline mt-3"
+                >
+                  Clica aqui para ver mais
+                  <ArrowRight size={14} />
+                </a>
+              )}
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-brand-deep/45 mt-4">
                 <span>{a.autor?.nome ?? 'Coordenação'}</span>
