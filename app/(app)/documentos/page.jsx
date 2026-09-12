@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { FolderOpen, Plus } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarCategoriasDocs, listarDocumentos } from '@/lib/dados'
 import DocumentosFiltros from './DocumentosFiltros'
 import ListaDocumentos from './ListaDocumentos'
@@ -9,7 +9,7 @@ import GestorCategorias from './GestorCategorias'
 export const metadata = { title: 'Documentos' }
 
 export default async function PaginaDocumentos({ searchParams }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const params = await searchParams
   const categoriaId = params?.cat || ''
   const busca = params?.q || ''

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import {
   obterAtividade,
   listarSubtarefas,
@@ -21,7 +21,7 @@ export const metadata = { title: 'Atividade' }
 
 export default async function PaginaAtividade({ params }) {
   const { id } = await params
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const atividade = await obterAtividade(id)
   if (!atividade) notFound()
 

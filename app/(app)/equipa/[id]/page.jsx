@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Mail, MessageCircle, Phone } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { obterPessoa, listarCargaMembro, formatarData } from '@/lib/dados'
 import { linkTelefone, linkWhatsapp } from '@/lib/contactos'
 import FormContactos from './FormContactos'
@@ -16,7 +16,7 @@ export const metadata = { title: 'Perfil' }
  */
 export default async function PaginaPerfil({ params }) {
   const { id } = await params
-  const { pessoa: atual } = await getUtilizadorAtual()
+  const { pessoa: atual } = await exigirUtilizador()
   const pessoa = await obterPessoa(id)
   if (!pessoa) notFound()
 

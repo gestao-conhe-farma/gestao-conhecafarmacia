@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { CalendarDays, CheckCircle2, Clock, ListTodo, Plus, UserCheck } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import {
   listarAtividades,
   listarSubtarefas,
@@ -22,7 +22,7 @@ const ROTULO_STATUS = {
 }
 
 export default async function PaginaInicio({ searchParams }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 

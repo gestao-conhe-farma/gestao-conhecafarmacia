@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarSubtarefas } from '@/lib/dados'
 import ListaAprovacoes from './ListaAprovacoes'
 
 export const metadata = { title: 'Aprovações' }
 
 export default async function PaginaAprovacoes() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (pessoa.role !== 'super_admin') redirect('/')
 
   const pendentes = await listarSubtarefas({ status: 'pendente_aprovacao' })

@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarCategoriasDocs } from '@/lib/dados'
 import FormNovoDocumento from './FormNovoDocumento'
 
 export const metadata = { title: 'Adicionar documento' }
 
 export default async function PaginaNovoDocumento() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (pessoa.role !== 'super_admin') redirect('/documentos')
 
   const categorias = await listarCategoriasDocs()

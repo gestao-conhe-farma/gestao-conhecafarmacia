@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, FileDown } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import {
   obterReuniao,
   listarNotasReuniao,
@@ -20,7 +20,7 @@ export const metadata = { title: 'Reunião' }
 
 export default async function PaginaReuniao({ params }) {
   const { id } = await params
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const reuniao = await obterReuniao(id)
   if (!reuniao) notFound()
 

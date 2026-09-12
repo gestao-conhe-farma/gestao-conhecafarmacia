@@ -1,5 +1,4 @@
-import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, ChevronRight } from 'lucide-react'
 import NavLateral from './NavLateral'
@@ -12,8 +11,7 @@ import VigiaSessao from './VigiaSessao'
 export const metadata = { title: 'Início' }
 
 export default async function AppLayout({ children }) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) redirect('/login')
+  const { pessoa } = await exigirUtilizador()
 
   const supabase = await createClient()
 

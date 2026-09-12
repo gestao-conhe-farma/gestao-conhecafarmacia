@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarEquipa } from '@/lib/dados'
 import FormNovoMembro from './FormNovoMembro'
 import ListaEquipa from './ListaEquipa'
@@ -13,7 +13,7 @@ export const metadata = { title: 'Equipa' }
  * em modo de leitura, com link para o perfil de cada pessoa.
  */
 export default async function PaginaEquipa() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (!pessoa) redirect('/login')
 
   const ehSuper = pessoa.role === 'super_admin'

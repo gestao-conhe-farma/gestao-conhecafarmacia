@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarEquipa, obterConfiguracaoReunioes } from '@/lib/dados'
 import FormNovaReuniao from './FormNovaReuniao'
 
 export const metadata = { title: 'Nova reunião' }
 
 export default async function PaginaNovaReuniao() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (pessoa.role !== 'super_admin') redirect('/reunioes')
 
   const [equipa, config] = await Promise.all([

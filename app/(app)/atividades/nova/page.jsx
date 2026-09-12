@@ -1,4 +1,4 @@
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { listarEquipa, listarAtividades } from '@/lib/dados'
 import FormNovaAtividade from './FormNovaAtividade'
@@ -6,7 +6,7 @@ import FormNovaAtividade from './FormNovaAtividade'
 export const metadata = { title: 'Nova atividade' }
 
 export default async function PaginaNovaAtividade() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (pessoa.role !== 'super_admin') redirect('/')
 
   const [equipa, todas] = await Promise.all([

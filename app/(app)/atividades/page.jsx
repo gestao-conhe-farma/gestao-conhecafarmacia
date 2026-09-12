@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ClipboardList, Plus } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarAtividades } from '@/lib/dados'
 import CartaoAtividade from '../CartaoAtividade'
 import AbasTipo from '../AbasTipo'
@@ -8,7 +8,7 @@ import AbasTipo from '../AbasTipo'
 export const metadata = { title: 'Atividades' }
 
 export default async function PaginaAtividades({ searchParams }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, MessageSquareWarning } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { obterSubtarefa } from '@/lib/dados'
 import AcoesEstadoSubtarefa from './AcoesEstadoSubtarefa'
 import AcoesDesconfirmarSubtarefa from './AcoesDesconfirmarSubtarefa'
@@ -12,7 +12,7 @@ export default async function PaginaDetalheSubtarefa({ params }) {
   // Rota: /atividades/[id]/subtarefas/[idSubtarefa] — o id da subtarefa
   // vive em idSubtarefa (id é o da atividade-mãe).
   const { idSubtarefa } = await params
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const sub = await obterSubtarefa(idSubtarefa)
   if (!sub) notFound()
 

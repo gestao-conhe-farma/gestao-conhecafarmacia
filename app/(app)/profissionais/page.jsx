@@ -1,11 +1,11 @@
-import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ListaProfissionais from './ListaProfissionais'
 
 export const metadata = { title: 'Profissionais' }
 
 export default async function PaginaProfissionais({ searchParams }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (!pessoa) redirect('/login')
 
   const { q, ver } = await searchParams

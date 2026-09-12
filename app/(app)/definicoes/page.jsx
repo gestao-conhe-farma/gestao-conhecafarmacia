@@ -1,4 +1,4 @@
-import { getUtilizadorAtual, createClient } from '@/lib/supabase/server'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import CartaoPerfil from './CartaoPerfil'
 import CartaoPalavraPasse from './CartaoPalavraPasse'
 import CartaoAparencia from './CartaoAparencia'
@@ -14,7 +14,7 @@ export const metadata = { title: 'Definições' }
  * régua fina, número à esquerda, sem cartões flutuantes.
  */
 export default async function PaginaDefinicoes() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
 
   // Fatores 2FA do próprio (RLS/MFA API garante que só os seus vêm aqui)
   const supabase = await createClient()

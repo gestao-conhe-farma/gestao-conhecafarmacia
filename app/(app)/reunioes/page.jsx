@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { CalendarDays, Plus, Settings, Zap } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { exigirUtilizador } from '@/lib/supabase/server'
 import { listarReunioes, obterConfiguracaoReunioes } from '@/lib/dados'
 import ListaReunioes from './ListaReunioes'
 import PainelRecorrencia from './PainelRecorrencia'
@@ -8,7 +8,7 @@ import PainelRecorrencia from './PainelRecorrencia'
 export const metadata = { title: 'Reuniões' }
 
 export default async function PaginaReunioes() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const ehSuper = pessoa.role === 'super_admin'
 
   const [reunioes, config] = await Promise.all([

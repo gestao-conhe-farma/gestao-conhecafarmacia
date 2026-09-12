@@ -1,11 +1,11 @@
 import { Check, CalendarCheck } from 'lucide-react'
-import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import CartaoEntrevista from './CartaoEntrevista'
 
 export const metadata = { title: 'As minhas entrevistas' }
 
 export default async function PaginaEntrevistas() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   const supabase = await createClient()
 
   const { data: convites } = await supabase

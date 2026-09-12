@@ -1,11 +1,11 @@
-import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ListaNotificacoes from './ListaNotificacoes'
 
 export const metadata = { title: 'Notificações' }
 
 export default async function PaginaNotificacoes() {
-  const { pessoa } = await getUtilizadorAtual()
+  const { pessoa } = await exigirUtilizador()
   if (!pessoa) redirect('/login')
 
   const supabase = await createClient()
