@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from 'react'
-import { Check, Loader2, Pencil, Send, Trash2, X } from 'lucide-react'
+import { Check, CheckCheck, Loader2, Pencil, Send, Trash2, X } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
-import { enviarMensagem, editarMensagem, apagarMensagem } from './actions'
+import { enviarMensagem, editarMensagem, apagarMensagem, marcarLido } from './actions'
 
 function hora(iso) {
   return new Date(iso).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
@@ -20,13 +20,24 @@ function dia(iso) {
  * e DM entre membros — a visibilidade vem das policies RLS da migração
  * 0021, o componente não precisa de saber o contexto.
  */
-export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeholder }) {
+export default function SecaoConversa({
+  canal,
+  mensagensIniciais,
+  meuId,
+  placeholder,
+  marcarAoChegar = false,
+  mostrarRecibos = false,
+  lidosDoParceiro = [],
+}) {
   const [mensagens, setMensagens] = useState(mensagensIniciais)
   const [texto, setTexto] = useState('')
   const [editando, setEditando] = useState(null)
   const [textoEdicao, setTextoEdicao] = useState('')
   const [aProcessar, setAProcessar] = useState(false)
   const [erro, setErro] = useState(null)
+  // Ids das minhas mensagens que o parceiro já leu (DM). Só atualiza ao
+  // abrir — os recibos do outro não propagam em tempo real.
+  const [lidos, setLidos] = useState(() => new Set(lidosDoParceiro))
   const [optimistic, adicionarOptimistic] = useOptimistic(
     mensagens,
     (estado, msg) => [...estado, msg]
@@ -47,6 +58,11 @@ export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeho
             if (atual.some((m) => m.id === payload.new.id)) return atual
             return [...atual, payload.new]
           })
+          // Painel aberto = mensagem vista: sobe o recibo (o badge da
+          // navegação desce no próximo refresh da página).
+          if (marcarAoChegar && payload.new.autor_id !== meuId) {
+            marcarLido(canal)
+          }
         }
       )
       .subscribe()
@@ -54,7 +70,12 @@ export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeho
     return () => {
       supabase.removeChannel(c)
     }
-  }, [canal])
+  }, [canal, marcarAoChegar, meuId])
+
+  // Abrir o canal conta como ler o que já lá estava
+  useEffect(() => {
+    if (marcarAoChegar) marcarLido(canal)
+  }, [canal, marcarAoChegar])
 
   // Auto-scroll para a última mensagem
   useEffect(() => {
@@ -138,6 +159,12 @@ export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeho
           const d = dia(m.criado_em)
           const mostraDia = d !== ultimoDia
           ultimoDia = d
+          const tick =
+            mostrarRecibos && meu && !m._otimista && !m.apagada_em
+              ? lidos.has(m.id)
+                ? 'read'
+                : 'sent'
+              : 'none'
 
           if (mostraDia) {
             return (
@@ -153,6 +180,7 @@ export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeho
                   m={m}
                   meu={meu}
                   meuId={meuId}
+                  tick={tick}
                   editando={editando}
                   textoEdicao={textoEdicao}
                   setTextoEdicao={setTextoEdicao}
@@ -175,6 +203,7 @@ export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeho
               m={m}
               meu={meu}
               meuId={meuId}
+              tick={tick}
               editando={editando}
               textoEdicao={textoEdicao}
               setTextoEdicao={setTextoEdicao}
@@ -229,6 +258,7 @@ export default function SecaoConversa({ canal, mensagensIniciais, meuId, placeho
 function LinhaMensagem({
   m,
   meu,
+  tick = 'none',
   editando,
   textoEdicao,
   setTextoEdicao,
@@ -283,6 +313,8 @@ function LinhaMensagem({
             <span className={`ml-2 text-[10px] align-baseline ${meu ? 'text-white/60' : 'text-brand-deep/40'}`}>
               {m._otimista ? '·' : hora(m.criado_em)}
               {m.editado_em && ' · editada'}
+              {tick === 'sent' && <Check size={11} className="inline ml-1 -mt-0.5" aria-label="enviada" />}
+              {tick === 'read' && <CheckCheck size={11} className="inline ml-1 -mt-0.5" aria-label="lida" />}
             </span>
           </>
         )}

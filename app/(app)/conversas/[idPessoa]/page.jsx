@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { exigirUtilizador } from '@/lib/supabase/server'
-import { obterPessoa, listarMensagens, canalDM } from '@/lib/dados'
+import { createClient, exigirUtilizador } from '@/lib/supabase/server'
+import { obterPessoa, listarMensagens, canalDM, marcarCanalLido } from '@/lib/dados'
 import SecaoConversa from '../../chats/SecaoConversa'
 
 export const metadata = { title: 'Conversa' }
@@ -27,6 +27,24 @@ export default async function PaginaConversa({ params }) {
 
   const canal = canalDM(atual.id, idPessoa)
   const mensagens = await listarMensagens(canal).catch(() => [])
+
+  // Abrir a conversa = ler tudo (o badge da navegação desce no próximo
+  // refresh; o painel também marca as que chegam em tempo real).
+  await marcarCanalLido(canal).catch(() => {})
+
+  // Recibo do parceiro — para os ticks de leitura nas minhas mensagens.
+  const supabase = await createClient()
+  const { data: recibo } = await supabase
+    .from('mensagens_lidas')
+    .select('lido_em')
+    .eq('canal', canal)
+    .eq('pessoa_id', idPessoa)
+    .maybeSingle()
+  const lidosDoParceiro = recibo
+    ? mensagens
+        .filter((m) => m.autor_id === atual.id && !m.apagada_em && new Date(m.criado_em) <= new Date(recibo.lido_em))
+        .map((m) => m.id)
+    : []
 
   return (
     <div className="container-app max-w-3xl">
@@ -73,6 +91,9 @@ export default async function PaginaConversa({ params }) {
           mensagensIniciais={mensagens}
           meuId={atual.id}
           placeholder={`Mensagem para ${parceiro.nome.split(' ')[0]}…`}
+          marcarAoChegar
+          mostrarRecibos
+          lidosDoParceiro={lidosDoParceiro}
         />
       </div>
     </div>

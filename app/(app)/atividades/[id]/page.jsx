@@ -342,6 +342,7 @@ export default async function PaginaAtividade({ params }) {
               mensagensIniciais={mensagens}
               meuId={pessoa.id}
               placeholder="Mensagem para a equipa desta atividade…"
+              marcarAoChegar
             />
           </div>
         </div>

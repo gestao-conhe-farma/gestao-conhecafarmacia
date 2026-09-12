@@ -217,6 +217,7 @@ export default async function PaginaReuniao({ params }) {
               mensagensIniciais={mensagens}
               meuId={pessoa.id}
               placeholder="Mensagem sobre esta reunião…"
+              marcarAoChegar
             />
           </div>
         </div>

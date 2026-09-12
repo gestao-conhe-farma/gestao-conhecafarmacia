@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { MessageSquare, Users } from 'lucide-react'
 import { exigirUtilizador } from '@/lib/supabase/server'
-import { listarConversasDM, listarEquipa } from '@/lib/dados'
+import { listarConversasDM, listarEquipa, naoLidasDM } from '@/lib/dados'
 
 export const metadata = { title: 'Conversas' }
 
@@ -14,9 +14,10 @@ export const metadata = { title: 'Conversas' }
 export default async function PaginaConversas() {
   const { pessoa } = await exigirUtilizador()
 
-  const [conversas, equipa] = await Promise.all([
+  const [conversas, equipa, naoLidas] = await Promise.all([
     listarConversasDM(pessoa.id).catch(() => []),
     listarEquipa(),
+    naoLidasDM(pessoa.id).catch(() => new Map()),
   ])
 
   const comConversa = new Set(conversas.map((c) => c.parceiroId))
@@ -60,10 +61,18 @@ export default async function PaginaConversas() {
                 >
                   <Iniciais nome={c.parceiro.nome} role={c.parceiro.role} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[14.5px] font-semibold text-brand-deep truncate">
-                      {c.parceiro.nome}
+                    <span className="flex items-center gap-2">
+                      <span className="text-[14.5px] font-semibold text-brand-deep truncate">
+                        {c.parceiro.nome}
+                      </span>
                       {!c.parceiro.ativo && (
-                        <span className="ml-2 text-[11px] font-normal text-brand-deep/40">ex-membro</span>
+                        <span className="text-[11px] font-normal text-brand-deep/40">ex-membro</span>
+                      )}
+                      {(naoLidas.get(c.canal) ?? 0) > 0 && (
+                        <span
+                          title={`${naoLidas.get(c.canal)} não lida(s)`}
+                          className="w-2 h-2 rounded-full bg-teal-500 shrink-0"
+                        />
                       )}
                     </span>
                     <span className="block text-[13px] text-brand-deep/50 truncate mt-0.5">

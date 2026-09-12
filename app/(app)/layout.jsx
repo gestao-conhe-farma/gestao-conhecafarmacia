@@ -1,4 +1,5 @@
 import { createClient, exigirUtilizador } from '@/lib/supabase/server'
+import { totalNaoLidas } from '@/lib/dados'
 import Link from 'next/link'
 import { Plus, ChevronRight } from 'lucide-react'
 import NavLateral from './NavLateral'
@@ -39,12 +40,17 @@ export default async function AppLayout({ children }) {
   const nConvites = convites?.count ?? 0
   const nConvocorias = reunioesPendentes?.count ?? 0
 
-  // Não lidas para o badge do sino
-  const { count: nNotificacoes } = await supabase
-    .from('notificacoes')
-    .select('id', { count: 'exact', head: true })
-    .eq('pessoa_id', pessoa.id)
-    .eq('lida', false)
+  // Não lidas para o badge do sino + mensagens não lidas (badge Conversas:
+  // DMs e canais de atividades/reuniões em que participo)
+  const [sino, naoLidasChats] = await Promise.all([
+    supabase
+      .from('notificacoes')
+      .select('id', { count: 'exact', head: true })
+      .eq('pessoa_id', pessoa.id)
+      .eq('lida', false),
+    totalNaoLidas(pessoa.id, pessoa.role).catch(() => 0),
+  ])
+  const nNotificacoes = sino?.count ?? 0
 
   const items = [
     { href: '/', label: 'Início', icon: 'inicio' },
@@ -55,7 +61,7 @@ export default async function AppLayout({ children }) {
     { href: '/entrevistas', label: 'As minhas entrevistas', icon: 'entrevistas', badge: nConvites },
     { href: '/reunioes', label: 'Reuniões', icon: 'reunioes', badge: nConvocorias },
     { href: '/documentos', label: 'Documentos', icon: 'documentos' },
-    { href: '/conversas', label: 'Conversas', icon: 'conversas' },
+    { href: '/conversas', label: 'Conversas', icon: 'conversas', badge: naoLidasChats ?? 0 },
     { href: '/entidades', label: 'Entidades', icon: 'entidades' },
     { href: '/profissionais', label: 'Profissionais', icon: 'profissionais' },
     { href: '/conteudo', label: 'Conteúdo', icon: 'conteudo' },

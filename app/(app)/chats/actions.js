@@ -1,10 +1,10 @@
 'use server'
 
-import { notificar } from '@/lib/notificacoes'
+import { notificar, semAutor } from '@/lib/notificacoes'
 
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { canalDM } from '@/lib/dados'
+import { canalDM, marcarCanalLido } from '@/lib/dados'
 
 /**
  * Ações do chat — mensagens contextuais (atividade/reunião) e DMs
@@ -45,6 +45,50 @@ function textoValido(texto) {
   return t.slice(0, 4000)
 }
 
+/**
+ * Avisa quem pertence ao canal da nova mensagem — in-app, sem email
+ * (chat é fluxo de trabalho, não urgência; o email fica para convites
+ * e atas). DMs avisam o parceiro; atividades avisam os responsáveis;
+ * reuniões avisam os participantes (a 0020 impede convocatórias a
+ * não-coordenadores em reuniões privadas, por isso quem está na lista
+ * consegue ver a reunião e o canal).
+ */
+async function avisarCanal(supabase, canal, autorId, nomeAutor, texto) {
+  try {
+    const [prefixo, id] = canal.split(':')
+    let destinatarios = []
+    let link = null
+    let contexto = ''
+
+    if (prefixo === 'dm') {
+      const parceiro = id === autorId ? canal.split(':')[2] : id
+      destinatarios = [parceiro]
+      link = `/conversas/${parceiro}`
+    } else {
+      const tabela = prefixo === 'atividade' ? 'atividade_responsaveis' : 'reuniao_participantes'
+      const coluna = prefixo === 'atividade' ? 'atividade_id' : 'reuniao_id'
+      const { data } = await supabase
+        .from(tabela)
+        .select('pessoa_id')
+        .eq(coluna, id)
+      destinatarios = (data ?? []).map((r) => r.pessoa_id)
+      link = prefixo === 'atividade' ? `/atividades/${id}` : `/reunioes/${id}`
+      contexto = prefixo === 'atividade' ? 'na atividade' : 'na reunião'
+    }
+
+    await notificar(semAutor(destinatarios, autorId), {
+      tipo: 'mensagem_nova',
+      titulo: `Mensagem de ${nomeAutor} ${contexto}`.trim(),
+      corpo: texto.slice(0, 120),
+      link,
+      soInApp: true,
+    })
+  } catch (e) {
+    // Best-effort: a mensagem já foi guardada
+    console.error('[chats] aviso do canal falhou', e?.message)
+  }
+}
+
 /** Enviar mensagem num canal (atividade:<id>, reuniao:<id> ou dm:<a>:<b>). */
 export async function enviarMensagem(canal, conteudo) {
   const { pessoa } = await getUtilizadorAtual()
@@ -62,24 +106,14 @@ export async function enviarMensagem(canal, conteudo) {
     .single()
   if (error) return { ok: false, erro: error.message }
 
-  // DM: avisar o parceiro da primeira mensagem da conversa (in-app,
-  // sem email — o chat é de trabalho, não urgência).
-  if (canal.startsWith('dm:')) {
-    const { count } = await supabase
-      .from('mensagens')
-      .select('id', { count: 'exact', head: true })
-      .eq('canal', canal)
-    if (count === 1) {
-      const [, a, b] = canal.split(':')
-      const parceiro = a === pessoa.id ? b : a
-      notificar([parceiro], {
-        tipo: 'dm_nova',
-        titulo: `Nova conversa de ${pessoa.nome}`,
-        corpo: texto.slice(0, 120),
-        link: `/conversas/${parceiro}`,
-      })
-    }
-  }
+  // Quem escreve, leu — o próprio recibo sobe, para o badge não
+  // contar a própria mensagem.
+  await supabase
+    .from('mensagens_lidas')
+    .upsert({ canal, pessoa_id: pessoa.id, lido_em: new Date().toISOString() })
+
+  // Aviso in-app a quem pertence ao canal (excluindo o autor)
+  await avisarCanal(supabase, canal, pessoa.id, pessoa.nome, texto)
 
   return { ok: true, id: msg.id }
 }
@@ -137,4 +171,18 @@ export async function abrirConversaCom(idPessoa) {
   if (!alvo.ativo) return { ok: false, erro: 'Este membro está desativado.' }
 
   return { ok: true, canal: canalDM(pessoa.id, idPessoa) }
+}
+
+/**
+ * Marcar o canal como lido (recibo do próprio, migração 0022).
+ * Chamado ao abrir a página do canal e, em tempo real, quando chegam
+ * novas mensagens com o painel aberto.
+ */
+export async function marcarLido(canal) {
+  try {
+    await marcarCanalLido(canal)
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, erro: e?.message ?? 'Falha ao marcar como lido.' }
+  }
 }
