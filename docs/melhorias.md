@@ -12,7 +12,7 @@
 
 | # | Melhoria | Impacto | Esforço | Sugestão |
 |---|----------|---------|---------|----------|
-| 1 | Notificações (email/badge) | 🔴 Alto | Médio | Primeiro a fazer |
+| 1 | ~~Notificações (email/badge)~~ | 🔴 Alto | Médio | ✅ Implementado set 2026 — sino + /notificacoes + email via Resend |
 | 2 | Registo de parceiros + **lista de profissionais externos** | 🔴 Alto | Médio | Primeiro a fazer |
 | 3 | Pipeline de conteúdo para redes sociais | 🔴 Alto | Médio/Grande | Planear quando doer |
 | 4 | Fechar o ciclo reunião → ação | 🟠 Médio | Baixo | Primeiro a fazer |
@@ -24,11 +24,20 @@
 
 ---
 
-## 1. Notificações — a lacuna mais sentida
+## 1. Notificações — ✅ IMPLEMENTADO (setembro 2026)
 
-**Problema:** hoje ninguém sabe que lhe foi atribuído algo sem entrar na app e
-procurar. Reunião agendada, subtarefa atribuída, ata publicada, aprovação
-pendente — tudo é silencioso.
+**Estado:** sino na topbar com badge + página `/notificacoes` com marcar-como-
+lida; emails com templates da marca via Resend (`RESEND_API_KEY` na Vercel,
+domínio `conhecafarmacia.com` verificado). Eventos ativos: convite/cancelamento
+de reunião, ata publicada, convite de entrevista, subtarefa atribuída.
+
+**Pendente para mais tarde:** lembrete automático 24h antes de reuniões
+(precisa de cron — pg_cron ou Vercel Cron) e notificação de aprovações
+pendentes para a coordenação.
+
+**Problema original:** ninguém sabia que lhe foi atribuído algo sem entrar na
+app e procurar. Reunião agendada, subtarefa atribuída, ata publicada,
+aprovação pendente — tudo era silencioso.
 
 **Proposta:** emails transacionais curtos (ex.: Resend — tem generosa camada
 gratuita e integra em minutos) nos eventos que importam:
