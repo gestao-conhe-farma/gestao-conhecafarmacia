@@ -93,16 +93,33 @@ async function gerarMensais(supabase, config, quantidade = 3) {
   return criadas
 }
 
-/** Criar reunião (super_admin). Se mensal, aplica a regra configurada. */
+/** Criar reunião (super_admin). Se mensal, aplica a regra configurada.
+ *  visibilidade: 'equipa' (todos veem) ou 'coordenacao' (só super_admins).
+ *  Reunião privada só pode convocar super_admins. */
 export async function criarReuniao(payload) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
-  const { titulo, tipo, dataHora, local, pauta, participantes } = payload
+  const { titulo, tipo, dataHora, local, pauta, participantes, visibilidade } = payload
   if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
   if (!dataHora) return { ok: false, erro: 'A data e hora são obrigatórias.' }
 
+  const privada = visibilidade === 'coordenacao'
   const supabase = await createClient()
+
+  // Reunião privada: todos os convocados têm de ser super_admins —
+  // um membro nunca pode ficar com convite para uma reunião que
+  // não consegue ver. Validado antes de criar (evita órfãos).
+  if (privada && participantes?.length) {
+    const { data: alvos } = await supabase
+      .from('pessoas')
+      .select('id, role')
+      .in('id', participantes)
+    if (alvos?.some((p) => p.role !== 'super_admin')) {
+      return { ok: false, erro: 'Reunião privada da coordenação — só é possível convocar super_admins.' }
+    }
+  }
+
   const { data, error } = await supabase
     .from('reunioes')
     .insert({
@@ -111,6 +128,7 @@ export async function criarReuniao(payload) {
       data_hora: dataHora,
       local: local?.trim() || null,
       pauta: pauta?.trim() || null,
+      visibilidade: privada ? 'coordenacao' : 'equipa',
       criado_por: pessoa.id,
     })
     .select('id')
@@ -187,12 +205,30 @@ export async function guardarConfiguracaoReunioes(config) {
   return { ok: true }
 }
 
-/** Convocar mais pessoas (super_admin). */
+/** Convocar mais pessoas (super_admin). Em reunião privada, só super_admins. */
 export async function convocarParticipantes(reuniaoId, pessoaIds) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
+
+  // Reunião privada: todos os convocados têm de ser da coordenação,
+  // senão um membro ficaria com convite para uma reunião que não vê.
+  const { data: visReuniao } = await supabase
+    .from('reunioes')
+    .select('visibilidade')
+    .eq('id', reuniaoId)
+    .single()
+  if (visReuniao?.visibilidade === 'coordenacao' && pessoaIds?.length) {
+    const { data: alvos } = await supabase
+      .from('pessoas')
+      .select('id, role')
+      .in('id', pessoaIds)
+    if (alvos?.some((p) => p.role !== 'super_admin')) {
+      return { ok: false, erro: 'Reunião privada da coordenação — só é possível convocar super_admins.' }
+    }
+  }
+
   const { error } = await supabase.from('reuniao_participantes').upsert(
     pessoaIds.map((pessoa_id) => ({ reuniao_id: reuniaoId, pessoa_id, status: 'convidado' })),
     { onConflict: 'reuniao_id,pessoa_id', ignoreDuplicates: true }
@@ -247,6 +283,58 @@ export async function editarReuniao(reuniaoId, payload) {
     .eq('id', reuniaoId)
 
   if (error) return { ok: false, erro: error.message }
+  revalidatePath(`/reunioes/${reuniaoId}`)
+  revalidatePath('/reunioes')
+  return { ok: true }
+}
+
+/**
+ * Mudar a visibilidade de uma reunião já criada (super_admin):
+ * 'equipa' (todos veem) <-> 'coordenacao' (só super_admins veem).
+ *
+ * Ao tornar privada, os convites de não-coordenadores são retirados
+ * — um membro nunca pode ficar com convite para uma reunião que
+ * deixou de conseguir ver. Ao abrir, os convites mantêm-se.
+ */
+export async function mudarVisibilidadeReuniao(reuniaoId, visibilidade) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
+  if (!['equipa', 'coordenacao'].includes(visibilidade)) {
+    return { ok: false, erro: 'Visibilidade inválida.' }
+  }
+
+  const supabase = await createClient()
+  if (await ataPublicada(supabase, reuniaoId)) {
+    return { ok: false, erro: 'A ata já foi publicada — a visibilidade está fechada.' }
+  }
+
+  const { error } = await supabase
+    .from('reunioes')
+    .update({ visibilidade })
+    .eq('id', reuniaoId)
+  if (error) return { ok: false, erro: error.message }
+
+  if (visibilidade === 'coordenacao') {
+    // Retira convites de membros não-coordenadores (mantém presenças
+    // já registadas fora do alcance deles — a linha desaparece para
+    // quem não vê a reunião, o histórico fica na BD)
+    const { data: aRemover } = await supabase
+      .from('reuniao_participantes')
+      .select('pessoa_id, pessoas(role)')
+      .eq('reuniao_id', reuniaoId)
+    const ids = (aRemover ?? [])
+      .filter((p) => p.pessoas?.role !== 'super_admin')
+      .map((p) => p.pessoa_id)
+    if (ids.length) {
+      const { error: errDel } = await supabase
+        .from('reuniao_participantes')
+        .delete()
+        .in('pessoa_id', ids)
+        .eq('reuniao_id', reuniaoId)
+      if (errDel) return { ok: false, erro: errDel.message }
+    }
+  }
+
   revalidatePath(`/reunioes/${reuniaoId}`)
   revalidatePath('/reunioes')
   return { ok: true }

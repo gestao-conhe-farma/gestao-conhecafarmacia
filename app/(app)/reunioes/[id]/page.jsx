@@ -15,6 +15,7 @@ import SecaoNotas from './SecaoNotas'
 import SecaoPlanos from './SecaoPlanos'
 import SecaoResumo from './SecaoResumo'
 import SecaoAnexos from './SecaoAnexos'
+import ControleVisibilidade from './ControleVisibilidade'
 
 export const metadata = { title: 'Reunião' }
 
@@ -65,6 +66,11 @@ export default async function PaginaReuniao({ params }) {
           )}
           {ataPublicada && (
             <span className="badge badge-status-confirmado normal-case">Ata publicada</span>
+          )}
+          {reuniao.visibilidade === 'coordenacao' && (
+            <span className="badge bg-brand-deep/5 text-brand-deep/60 normal-case border border-brand-divider">
+              Privada — só coordenação
+            </span>
           )}
         </div>
 
@@ -118,6 +124,13 @@ export default async function PaginaReuniao({ params }) {
             </span>
           </div>
         </div>
+
+        {/* Visibilidade: coordenação alterna entre toda a equipa e privada */}
+        {ehSuper && reuniao.estado === 'agendada' && (
+          <div className="mt-4">
+            <ControleVisibilidade reuniaoId={reuniao.id} visibilidade={reuniao.visibilidade} />
+          </div>
+        )}
 
         {/* Editar detalhes: coordenação, enquanto a reunião está agendada */}
         {ehSuper && reuniao.estado === 'agendada' && (

@@ -62,6 +62,11 @@ export default function ListaReunioes({ reunioes, pessoaAtualId, ehSuper, futura
                 ) : (
                   <span className="badge bg-brand-primary/10 text-brand-primary shrink-0">Mensal</span>
                 )}
+                {ehSuper && r.visibilidade === 'coordenacao' && (
+                  <span className="badge bg-brand-deep/5 text-brand-deep/55 shrink-0 border border-brand-divider">
+                    Privada
+                  </span>
+                )}
                 {estado && (
                   <span className={`badge shrink-0 normal-case ${estado.cls}`}>{estado.txt}</span>
                 )}

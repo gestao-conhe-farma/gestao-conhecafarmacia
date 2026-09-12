@@ -32,6 +32,8 @@ export default function FormNovaReuniao({ equipa, pessoaAtualId, config }) {
   const router = useRouter()
   const [tipo, setTipo] = useState('mensal')
   const [titulo, setTitulo] = useState('')
+  const [visibilidade, setVisibilidade] = useState('equipa')
+  const privada = visibilidade === 'coordenacao'
   const [dataHora, setDataHora] = useState(() => {
     const d = config?.ativa ? proximaDataRegra(config) : null
     if (!d) return ''
@@ -58,6 +60,16 @@ export default function FormNovaReuniao({ equipa, pessoaAtualId, config }) {
     )
   }
 
+  /** Mudar visibilidade; ao tornar privada, restringe convocados aos super_admins. */
+  function mudarVisibilidade(v) {
+    setVisibilidade(v)
+    if (v === 'coordenacao') {
+      setParticipantes((atual) =>
+        atual.filter((id) => equipa.find((p) => p.id === id)?.role === 'super_admin')
+      )
+    }
+  }
+
   async function submeter(e) {
     e.preventDefault()
     setErro(null)
@@ -70,6 +82,7 @@ export default function FormNovaReuniao({ equipa, pessoaAtualId, config }) {
         local,
         pauta,
         participantes,
+        visibilidade,
       })
       if (!r.ok) {
         setErro(r.erro || 'Não foi possível criar a reunião.')
@@ -159,26 +172,58 @@ export default function FormNovaReuniao({ equipa, pessoaAtualId, config }) {
       </div>
 
       <div className="form-group">
-        <span className="form-label">Convocados</span>
-        <p className="text-xs text-brand-deep/50 mt-0.5 mb-2">
-          Todos selecionados por defeito — os convocados confirmam presença na secção Reuniões.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {equipa.map((p) => (
+        <span className="form-label">Visibilidade</span>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {[
+            { v: 'equipa', l: 'Toda a equipa' },
+            { v: 'coordenacao', l: 'Só coordenação' },
+          ].map((o) => (
             <button
-              key={p.id}
+              key={o.v}
               type="button"
-              onClick={() => alternarPessoa(p.id)}
-              className={`px-3 py-1.5 rounded-full text-sm border-2 transition-all ${
-                participantes.includes(p.id)
-                  ? 'border-brand-accent bg-brand-accent/10 text-brand-accent font-semibold'
-                  : 'border-brand-divider text-brand-deep/60 hover:border-brand-accent/50'
-              }`}
+              onClick={() => mudarVisibilidade(o.v)}
+              className={`filter-btn ${visibilidade === o.v ? 'active' : ''}`}
             >
-              {p.nome}
-              {p.id === pessoaAtualId && ' (tu)'}
+              {o.l}
             </button>
           ))}
+        </div>
+        <p className="text-xs text-brand-deep/45 mt-1.5">
+          {privada
+            ? 'Reunião privada: só a coordenação vê e pode ser convocada. Podes abrir depois, na página da reunião.'
+            : 'Visível a toda a equipa. Podes torná-la privada depois, na página da reunião.'}
+        </p>
+      </div>
+
+      <div className="form-group">
+        <span className="form-label">Convocados</span>
+        <p className="text-xs text-brand-deep/50 mt-0.5 mb-2">
+          {privada
+            ? 'Só membros da coordenação podem ser convocados numa reunião privada.'
+            : 'Todos selecionados por defeito — os convocados confirmam presença na secção Reuniões.'}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {equipa.map((p) => {
+            const bloqueado = privada && p.role !== 'super_admin'
+            return (
+              <button
+                key={p.id}
+                type="button"
+                disabled={bloqueado}
+                onClick={() => alternarPessoa(p.id)}
+                className={`px-3 py-1.5 rounded-full text-sm border-2 transition-all ${
+                  bloqueado
+                    ? 'border-brand-divider/50 text-brand-deep/25 cursor-not-allowed'
+                    : participantes.includes(p.id)
+                      ? 'border-brand-accent bg-brand-accent/10 text-brand-accent font-semibold'
+                      : 'border-brand-divider text-brand-deep/60 hover:border-brand-accent/50'
+                }`}
+              >
+                {p.nome}
+                {p.id === pessoaAtualId && ' (tu)'}
+              </button>
+            )
+          })}
         </div>
       </div>
 
