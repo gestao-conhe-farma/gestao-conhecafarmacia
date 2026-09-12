@@ -69,9 +69,15 @@ export default async function AppLayout({ children }) {
     { href: '/reunioes', label: 'Reuniões', icon: 'reunioes', badge: nConvocorias },
     { href: '/documentos', label: 'Documentos', icon: 'documentos' },
     { href: '/conversas', label: 'Conversas', icon: 'conversas', badge: naoLidasChats ?? 0 },
-    { href: '/entidades', label: 'Entidades', icon: 'entidades' },
-    { href: '/profissionais', label: 'Profissionais', icon: 'profissionais' },
-    { href: '/conteudo', label: 'Conteúdo', icon: 'conteudo' },
+    {
+      href: '/entidades',
+      label: 'Parcerias',
+      icon: 'entidades',
+      filhos: [
+        { href: '/entidades', label: 'Entidades' },
+        { href: '/profissionais', label: 'Profissionais' },
+      ],
+    },
     { href: '/equipa', label: 'Equipa', icon: 'equipa' },
     { href: '/definicoes', label: 'Definições', icon: 'definicoes' },
   ]

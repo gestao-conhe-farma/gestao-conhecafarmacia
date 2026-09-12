@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  LogOut, Menu, Moon, Plus, Sun, X, ChevronRight,
+  LogOut, Menu, Moon, Plus, Sun, X, ChevronRight, ChevronDown,
   LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen, MessageCircle,
   Handshake, Stethoscope, Megaphone,
 } from 'lucide-react'
@@ -171,31 +171,13 @@ export default function DrawerMobile({ items, pessoa }) {
 
               {/* Navegação numerada */}
               <nav className="flex-1 px-3 py-4 space-y-0.5" aria-label="Navegação mobile">
-                {items.map(({ href, label, icon, badge, num }) => {
-                  const Icone = ICONES[icon] ?? ClipboardList
-                  const ativo = href === '/' ? pathname === '/' : pathname.startsWith(href)
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      aria-current={ativo ? 'page' : undefined}
-                      className={`flex items-center gap-3 px-3 py-3 text-[14.5px] border-l-2 transition-colors rounded-r-lg ${
-                        ativo
-                          ? 'bg-white/[0.07] border-brand-accent text-white font-semibold'
-                          : 'border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white'
-                      }`}
-                    >
-                      <span className="text-[10px] font-bold w-5 text-white/30 tabular-nums">{num}</span>
-                      <Icone size={17} className="shrink-0" />
-                      <span className="flex-1 truncate">{label}</span>
-                      {badge > 0 && (
-                        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[10.5px] font-bold">
-                          {badge}
-                        </span>
-                      )}
-                    </Link>
+                {items.map((item) =>
+                  item.filhos?.length ? (
+                    <ItemGrupoMobile key={item.href} item={item} pathname={pathname} />
+                  ) : (
+                    <LinkLateralMobile key={item.href} item={item} pathname={pathname} />
                   )
-                })}
+                )}
               </nav>
 
               {/* Rodapé: tema + utilizador + sair */}
@@ -249,4 +231,95 @@ function iniciais(nome) {
     .slice(0, 2)
     .map((p) => p[0].toUpperCase())
     .join('')
+}
+
+/** Link de menu simples — comportamento anterior. */
+function LinkLateralMobile({ item, pathname }) {
+  const { href, label, icon, badge, num } = item
+  const Icone = ICONES[icon] ?? ClipboardList
+  const ativo = href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  return (
+    <Link
+      href={href}
+      aria-current={ativo ? 'page' : undefined}
+      className={`flex items-center gap-3 px-3 py-3 text-[14.5px] border-l-2 transition-colors rounded-r-lg ${
+        ativo
+          ? 'bg-white/[0.07] border-brand-accent text-white font-semibold'
+          : 'border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white'
+      }`}
+    >
+      <span className="text-[10px] font-bold w-5 text-white/30 tabular-nums">{num}</span>
+      <Icone size={17} className="shrink-0" />
+      <span className="flex-1 truncate">{label}</span>
+      {badge > 0 && (
+        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-brand-accent text-white text-[10.5px] font-bold">
+          {badge}
+        </span>
+      )}
+    </Link>
+  )
+}
+
+/**
+ * Grupo com submenu no drawer (ex.: Parcerias → Entidades + Profissionais).
+ * O cabeçalho navega; a setinha abre/fecha. Abre sozinho numa rota filha.
+ */
+function ItemGrupoMobile({ item, pathname }) {
+  const { href, label, icon, num, filhos } = item
+  const Icone = ICONES[icon] ?? ClipboardList
+  const grupoAtivo = filhos.some((f) => pathname.startsWith(f.href))
+  const [aberto, setAberto] = useState(grupoAtivo)
+
+  useEffect(() => {
+    if (grupoAtivo) setAberto(true)
+  }, [grupoAtivo])
+
+  return (
+    <div>
+      <div
+        className={`flex items-center gap-3 pl-3 pr-2 py-3 text-[14.5px] border-l-2 transition-colors rounded-r-lg ${
+          grupoAtivo
+            ? 'bg-white/[0.07] border-brand-accent text-white font-semibold'
+            : 'border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white'
+        }`}
+      >
+        <span className="text-[10px] font-bold w-5 text-white/30 tabular-nums">{num}</span>
+        <Icone size={17} className="shrink-0" />
+        <Link href={href} className="flex-1 truncate" aria-current={grupoAtivo ? 'page' : undefined}>
+          {label}
+        </Link>
+        <button
+          onClick={() => setAberto((a) => !a)}
+          aria-expanded={aberto}
+          aria-label={aberto ? `Fechar submenu de ${label}` : `Abrir submenu de ${label}`}
+          className="w-7 h-7 grid place-items-center rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+        >
+          <ChevronDown size={15} className={`transition-transform duration-200 ${aberto ? '' : '-rotate-90'}`} />
+        </button>
+      </div>
+
+      {aberto && (
+        <div className="mt-0.5 mb-1">
+          {filhos.map((f) => {
+            const ativo = pathname.startsWith(f.href)
+            return (
+              <Link
+                key={f.href}
+                href={f.href}
+                aria-current={ativo ? 'page' : undefined}
+                className={`flex items-center pl-14 pr-3 py-2.5 text-[13.5px] border-l-2 rounded-r-lg transition-colors ${
+                  ativo
+                    ? 'border-brand-accent text-white font-semibold bg-white/[0.05]'
+                    : 'border-transparent text-white/55 hover:text-white hover:bg-white/[0.04]'
+                }`}
+              >
+                {f.label}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
