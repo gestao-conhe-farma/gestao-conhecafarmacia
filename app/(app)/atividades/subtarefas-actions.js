@@ -2,7 +2,7 @@
 
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { notificar, semAutor } from '@/lib/notificacoes'
+import { notificar, notificarCoordenacao, semAutor } from '@/lib/notificacoes'
 
 /**
  * Criar subtarefa. Admin (membro) ou super_admin.
@@ -42,6 +42,16 @@ export async function criarSubtarefa(payload) {
       titulo: `Nova tarefa: ${titulo.trim()}`,
       corpo: 'Foste atribuído a uma subtarefa.',
       link: atividadeId ? `/atividades/${atividadeId}` : '/',
+    })
+  }
+
+  // Painel da coordenação (apenas in-app): há uma aprovação à espera
+  if (pessoa.role !== 'super_admin') {
+    notificarCoordenacao(pessoa.id, {
+      tipo: 'subtarefa_pendente',
+      titulo: 'Tarefa à espera de aprovação',
+      corpo: `${pessoa.nome} criou "${titulo.trim()}".`,
+      link: atividadeId ? `/atividades/${atividadeId}` : '/aprovacoes',
     })
   }
 
@@ -134,6 +144,17 @@ export async function editarSubtarefa(id, payload) {
       )
       if (errIns) return { ok: false, erro: errIns.message }
     }
+  }
+
+  // Se continuou pendente (o criador editou a proposta), avisa de novo
+  // a coordenação — o título/dados podem ter mudado
+  if (sub.status === 'pendente_aprovacao' && pessoa.role !== 'super_admin') {
+    notificarCoordenacao(pessoa.id, {
+      tipo: 'subtarefa_pendente',
+      titulo: 'Tarefa à espera de aprovação',
+      corpo: `${pessoa.nome} atualizou "${titulo.trim()}".`,
+      link: sub.atividade_id ? `/atividades/${sub.atividade_id}` : '/aprovacoes',
+    })
   }
 
   revalidatePath('/')
@@ -310,7 +331,7 @@ export async function retratarRecusaSubtarefa(id) {
   const supabase = await createClient()
   const { data: sub } = await supabase
     .from('subtarefas')
-    .select('id, status, atividade_id')
+    .select('id, titulo, status, atividade_id')
     .eq('id', id)
     .single()
   if (!sub) return { ok: false, erro: 'Subtarefa não encontrada.' }
@@ -323,6 +344,14 @@ export async function retratarRecusaSubtarefa(id) {
     .update({ status: 'pendente_aprovacao', aprovado_por: null, aprovado_em: null })
     .eq('id', id)
   if (error) return { ok: false, erro: error.message }
+
+  // Painel da coordenação (apenas in-app): voltou a estar pendente
+  notificarCoordenacao(pessoa.id, {
+    tipo: 'subtarefa_pendente',
+    titulo: 'Tarefa à espera de aprovação',
+    corpo: `${pessoa.nome} retirou a recusa de "${sub.titulo}".`,
+    link: sub.atividade_id ? `/atividades/${sub.atividade_id}` : '/aprovacoes',
+  })
 
   revalidatePath('/')
   revalidatePath('/aprovacoes')

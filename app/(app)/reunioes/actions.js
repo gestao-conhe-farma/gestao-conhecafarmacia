@@ -1,6 +1,6 @@
 'use server'
 
-import { notificar, semAutor } from '@/lib/notificacoes'
+import { notificar, notificarCoordenacao, semAutor } from '@/lib/notificacoes'
 
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -501,6 +501,13 @@ export async function decidirPlano(reuniaoId, planoId, decisao) {
   }
 
   const supabase = await createClient()
+  const { data: plano } = await supabase
+    .from('reuniao_planos')
+    .select('titulo')
+    .eq('id', planoId)
+    .single()
+  if (!plano) return { ok: false, erro: 'Plano não encontrado.' }
+
   const { error } = await supabase
     .from('reuniao_planos')
     .update({
@@ -511,6 +518,18 @@ export async function decidirPlano(reuniaoId, planoId, decisao) {
     .eq('id', planoId)
 
   if (error) return { ok: false, erro: error.message }
+
+  // Painel da coordenação (apenas in-app): decisão aprovada que fica
+  // no widget "Decisões à espera" até ser convertida em atividade
+  if (decisao === 'aprovado') {
+    notificarCoordenacao(pessoa.id, {
+      tipo: 'decisao_pendente',
+      titulo: 'Decisão aprovada à espera de atividade',
+      corpo: `"${plano.titulo}" foi aprovada na reunião — falta converter em atividade.`,
+      link: `/reunioes/${reuniaoId}`,
+    })
+  }
+
   revalidatePath(`/reunioes/${reuniaoId}`)
   return { ok: true }
 }

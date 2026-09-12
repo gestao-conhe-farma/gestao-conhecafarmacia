@@ -13,6 +13,7 @@ import {
   MessagesSquare,
   Handshake,
   Stethoscope,
+  Megaphone,
 } from 'lucide-react'
 
 // Chaves de texto → componentes (ícones não podem atravessar a fronteira
@@ -26,6 +27,7 @@ const ICONES = {
   documentos: FolderOpen,
   entidades: Handshake,
   profissionais: Stethoscope,
+  conteudo: Megaphone,
   equipa: Users,
   definicoes: Settings,
 }

@@ -6,6 +6,9 @@ import {
   listarSubtarefas,
   listarDatasFuturas,
   listarPlanosSemAtividade,
+  listarConteudoRedes,
+  atividadeJaPassou,
+  ordenarPorPrazo,
   formatarData,
 } from '@/lib/dados'
 import CartaoAtividade from './CartaoAtividade'
@@ -26,7 +29,7 @@ export default async function PaginaInicio({ searchParams }) {
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 
-  const [atividadesBrutas, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes] = await Promise.all([
+  const [atividadesBrutas, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes, conteudoRedes] = await Promise.all([
     listarAtividades({ tipo }),
     listarSubtarefas({}),
     pessoa.role === 'super_admin'
@@ -34,17 +37,15 @@ export default async function PaginaInicio({ searchParams }) {
       : Promise.resolve([]),
     listarDatasFuturas(),
     listarPlanosSemAtividade(),
+    listarConteudoRedes(),
   ])
 
   // Secção "O que está a acontecer": por data, do mais próximo ao mais
-  // distante (ordenação do cartão — a coluna de data é o prazo). Atividades
-  // sem prazo vão para o fim; empates mantêm a ordem de criação (sort estável).
-  const atividades = [...atividadesBrutas].sort((a, b) => {
-    if (!a.prazo && !b.prazo) return 0
-    if (!a.prazo) return 1
-    if (!b.prazo) return -1
-    return new Date(a.prazo) - new Date(b.prazo)
-  })
+  // distante — e sem o passado (a homepage é o "agora"; o histórico
+  // completo fica em /atividades, com o botão de mostrar passadas)
+  const atividades = ordenarPorPrazo(atividadesBrutas).filter(
+    (a) => !a.prazo || !atividadeJaPassou(a.prazo)
+  )
 
   // Decisões aprovadas sem atividade, com a idade da decisão —
   // as mais antigas primeiro (são as que morrem esquecidas)
@@ -122,6 +123,15 @@ export default async function PaginaInicio({ searchParams }) {
       return d >= segundaFeira && d <= domingo
     })
     .sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora))[0]
+
+  // Conteúdo das redes: o que sai nesta semana (segunda → domingo)
+  const conteudoDaSemana = (conteudoRedes ?? [])
+    .filter((c) => {
+      if (!c.ativo) return false
+      const d = new Date(`${String(c.data_publicacao).slice(0, 10)}T12:00:00`)
+      return d >= segundaFeira && d <= domingo
+    })
+    .sort((a, b) => String(a.data_publicacao).localeCompare(String(b.data_publicacao)))
 
   return (
     <div className="container-app">
@@ -293,7 +303,7 @@ export default async function PaginaInicio({ searchParams }) {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-base font-bold text-brand-deep">
-              <span className="text-brand-accent text-[11px] font-bold tracking-[0.14em] mr-2.5">03</span>
+              <span className="text-brand-accent text-[11px] font-bold tracking-[0.14em] mr-2.5">04</span>
               Decisões à espera
             </h3>
             {decisoesAbertas.length > 0 && (
@@ -335,6 +345,58 @@ export default async function PaginaInicio({ searchParams }) {
               ))}
             </ul>
           )}
+        </div>
+        {/* Nas redes: conteúdo que sai esta semana — lembrete editorial */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-base font-bold text-brand-deep">
+              <span className="text-brand-accent text-[11px] font-bold tracking-[0.14em] mr-2.5">05</span>
+              Nas redes esta semana
+            </h3>
+            {conteudoDaSemana.length > 0 && (
+              <Link href="/conteudo" className="badge badge-status-aprovada normal-case">
+                {conteudoDaSemana.length}
+              </Link>
+            )}
+          </div>
+          {conteudoDaSemana.length === 0 ? (
+            <p className="text-sm text-brand-deep/50 py-8 text-center">
+              Nada agendado nas redes para esta semana.
+            </p>
+          ) : (
+            <ul className="divide-y divide-brand-divider/70">
+              {conteudoDaSemana.slice(0, 6).map((c) => (
+                <li key={c.id} className="py-3 flex items-center gap-3">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      c.plataforma === 'facebook'
+                        ? 'bg-blue-600'
+                        : c.plataforma === 'instagram'
+                        ? 'bg-pink-500'
+                        : c.plataforma === 'tiktok'
+                        ? 'bg-neutral-900 dark:bg-white'
+                        : 'bg-red-600'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-brand-deep truncate">{c.titulo}</p>
+                    <p className="text-xs text-brand-deep/50 capitalize">
+                      {c.plataforma} · {formatarData(c.data_publicacao)}
+                    </p>
+                  </div>
+                  {c.estado === 'publicado' ? (
+                    <span className="badge badge-status-concluida shrink-0">Publicado</span>
+                  ) : (
+                    <span className="badge badge-status-pendente shrink-0 capitalize">{c.estado}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href="/conteudo" className="text-[12px] font-semibold text-brand-accent hover:underline mt-3 inline-block">
+            Ver calendário completo →
+          </Link>
         </div>
       </div>
 

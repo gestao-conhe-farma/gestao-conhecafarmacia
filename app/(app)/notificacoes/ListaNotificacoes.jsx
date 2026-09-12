@@ -16,6 +16,17 @@ function quando(iso) {
   return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
 }
 
+/** Cor do ponto por tipo de evento — a mesmo família de cores da app. */
+const COR_TIPO = {
+  convite_reuniao: 'bg-brand-accent',
+  reuniao_cancelada: 'bg-red-500',
+  ata_publicada: 'bg-brand-accent',
+  convite_entrevista: 'bg-sky-500',
+  subtarefa_atribuida: 'bg-amber-500',
+  subtarefa_pendente: 'bg-violet-500',
+  decisao_pendente: 'bg-violet-500',
+}
+
 export default function ListaNotificacoes({ iniciais = [] }) {
   const router = useRouter()
   const [itens, setItens] = useState(iniciais)
@@ -71,7 +82,9 @@ export default function ListaNotificacoes({ iniciais = [] }) {
         {itens.map((n) => {
           const conteudo = (
             <>
-              <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.lida ? 'bg-transparent' : 'bg-brand-accent'}`} />
+              <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                n.lida ? 'bg-transparent' : COR_TIPO[n.tipo] ?? 'bg-brand-accent'
+              }`} />
               <span className="min-w-0 flex-1">
                 <span className={`block text-sm truncate ${n.lida ? 'text-brand-deep/55' : 'font-semibold text-brand-deep'}`}>
                   {n.titulo}
