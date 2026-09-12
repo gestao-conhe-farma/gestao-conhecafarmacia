@@ -23,7 +23,7 @@ const ICONES = {
   atividades: ClipboardList,
   aprovacoes: CheckCircle2,
   entrevistas: CalendarCheck,
-  reunioes: MessagesSquare,
+  reunioes: CalendarCheck,
   documentos: FolderOpen,
   conversas: MessageCircle,
   entidades: Handshake,
