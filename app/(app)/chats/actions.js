@@ -61,9 +61,12 @@ async function avisarCanal(supabase, canal, autorId, nomeAutor, texto) {
     let contexto = ''
 
     if (prefixo === 'dm') {
-      const parceiro = id === autorId ? canal.split(':')[2] : id
-      destinatarios = [parceiro]
-      link = `/conversas/${parceiro}`
+      const [, a, b] = canal.split(':')
+      destinatarios = [a === autorId ? b : a]
+      // O link tem de apontar para o AUTOR (o destinatário abre a
+      // conversa com quem lhe escreveu) — apontar para o próprio
+      // destinatário caía na página "Conversa inválida".
+      link = `/conversas/${autorId}`
     } else {
       const tabela = prefixo === 'atividade' ? 'atividade_responsaveis' : 'reuniao_participantes'
       const coluna = prefixo === 'atividade' ? 'atividade_id' : 'reuniao_id'

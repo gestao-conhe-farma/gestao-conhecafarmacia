@@ -5,6 +5,7 @@ import { Plus, ChevronRight } from 'lucide-react'
 import NavLateral from './NavLateral'
 import DrawerMobile from './DrawerMobile'
 import SinoNotificacoes from './SinoNotificacoes'
+import BotaoAnuncios from './BotaoAnuncios'
 import BotaoTema from './BotaoTema'
 import BotaoSair from './BotaoSair'
 import VigiaSessao from './VigiaSessao'
@@ -42,15 +43,21 @@ export default async function AppLayout({ children }) {
 
   // Não lidas para o badge do sino + mensagens não lidas (badge Conversas:
   // DMs e canais de atividades/reuniões em que participo)
-  const [sino, naoLidasChats] = await Promise.all([
+  const [sino, naoLidasChats, anunciosRecentes] = await Promise.all([
     supabase
       .from('notificacoes')
       .select('id', { count: 'exact', head: true })
       .eq('pessoa_id', pessoa.id)
       .eq('lida', false),
     totalNaoLidas(pessoa.id, pessoa.role).catch(() => 0),
+    supabase
+      .from('anuncios')
+      .select('id', { count: 'exact', head: true })
+      .eq('ativo', true)
+      .gte('criado_em', new Date(Date.now() - 7 * 86400000).toISOString()),
   ])
   const nNotificacoes = sino?.count ?? 0
+  const nAnuncios = anunciosRecentes?.count ?? 0
 
   const items = [
     { href: '/', label: 'Início', icon: 'inicio' },
@@ -129,7 +136,7 @@ export default async function AppLayout({ children }) {
             <img src="/logo/logo-principal-branco.svg" alt="Conheça Farmácia" className="h-7" />
           </Link>
           <div className="flex items-center gap-1">
-            {/* Tema e logout vivem no drawer mobile — aqui fica só o sino */}
+            <BotaoAnuncios inicial={nAnuncios} />
             <SinoNotificacoes inicial={nNotificacoes ?? 0} />
           </div>
         </header>
@@ -137,6 +144,7 @@ export default async function AppLayout({ children }) {
         {/* Topbar desktop: sino + alternar tema (logout e tema continuam
             também no drawer para mobile; aqui o tema saiu da sidebar) */}
         <header className="hidden lg:flex sticky top-0 z-40 justify-end items-center gap-1 h-14 px-6 bg-brand-bg-alt/80 backdrop-blur border-b border-brand-divider/60">
+          <BotaoAnuncios inicial={nAnuncios} variante="claro" />
           <SinoNotificacoes inicial={nNotificacoes ?? 0} variante="claro" />
           <BotaoTema variante="topbar" />
         </header>

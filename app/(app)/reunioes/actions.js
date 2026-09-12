@@ -5,6 +5,7 @@ import { notificar, notificarCoordenacao, semAutor } from '@/lib/notificacoes'
 import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BUCKET } from '@/lib/documentos'
+import { criarAnuncio } from '../anuncios/actions'
 
 /**
  * Ações da secção Reuniões.
@@ -680,14 +681,26 @@ export async function converterPlano(reuniaoId, planoId, { tipo, prazo, responsa
   return { ok: true, id: atividade.id }
 }
 
-/** Publicar resumo final (super_admin) — congela as notas. */
-export async function publicarResumo(reuniaoId, resumo) {
+/**
+ * Publicar resumo final (super_admin) — congela as notas. Com
+ * `tambemAnuncio`, publica o mesmo texto como anúncio para toda a
+ * equipa (notificação in-app + email), ligado à reunião.
+ */
+export async function publicarResumo(reuniaoId, resumo, tambemAnuncio = false) {
   const { pessoa } = await getUtilizadorAtual()
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   const texto = (resumo ?? '').trim()
   if (!texto) return { ok: false, erro: 'Escreve o resumo antes de publicar.' }
 
   const supabase = await createClient()
+
+  const { data: atual } = await supabase
+    .from('reunioes')
+    .select('titulo')
+    .eq('id', reuniaoId)
+    .maybeSingle()
+  if (!atual) return { ok: false, erro: 'Reunião não encontrada.' }
+
   const { error } = await supabase
     .from('reunioes')
     .update({
@@ -710,6 +723,15 @@ export async function publicarResumo(reuniaoId, resumo) {
     corpo: 'O resumo final da reunião já está disponível.',
     link: `/reunioes/${reuniaoId}`,
   })
+
+  // Publicar também como anúncio (comunicado geral com o resumo)
+  if (tambemAnuncio) {
+    const r = await criarAnuncio(`Resumo: ${atual.titulo}`, texto, reuniaoId)
+    if (!r.ok) {
+      // A ata já está publicada — o anúncio é extra; reporta o aviso
+      return { ok: true, aviso: `Ata publicada, mas o anúncio falhou: ${r.erro}` }
+    }
+  }
 
   revalidatePath(`/reunioes/${reuniaoId}`)
   revalidatePath('/reunioes')

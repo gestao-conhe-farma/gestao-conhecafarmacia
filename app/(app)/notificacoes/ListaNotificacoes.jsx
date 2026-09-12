@@ -27,6 +27,7 @@ const COR_TIPO = {
   decisao_pendente: 'bg-violet-500',
   dm_nova: 'bg-teal-500',
   mensagem_nova: 'bg-teal-500',
+  anuncio_novo: 'bg-brand-accent',
 }
 
 export default function ListaNotificacoes({ iniciais = [] }) {

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CalendarDays, CheckCircle2, Clock, ListTodo, Plus, UserCheck } from 'lucide-react'
+import { CalendarDays, CheckCircle2, Clock, ListTodo, Megaphone, Plus, UserCheck } from 'lucide-react'
 import { exigirUtilizador } from '@/lib/supabase/server'
 import {
   listarAtividades,
@@ -7,6 +7,7 @@ import {
   listarDatasFuturas,
   listarPlanosSemAtividade,
   listarConteudoRedes,
+  listarAnuncios,
   atividadeJaPassou,
   ordenarPorPrazo,
   formatarData,
@@ -29,7 +30,7 @@ export default async function PaginaInicio({ searchParams }) {
   const params = await searchParams
   const tipo = params?.tipo || 'todas'
 
-  const [atividadesBrutas, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes, conteudoRedes] = await Promise.all([
+  const [atividadesBrutas, minhasSubtarefas, aAprovar, datasFuturas, planosPendentes, conteudoRedes, anuncios] = await Promise.all([
     listarAtividades({ tipo }),
     listarSubtarefas({}),
     pessoa.role === 'super_admin'
@@ -38,7 +39,11 @@ export default async function PaginaInicio({ searchParams }) {
     listarDatasFuturas(),
     listarPlanosSemAtividade(),
     listarConteudoRedes(),
+    listarAnuncios().catch(() => []),
   ])
+
+  // Anúncio mais recente da coordenação — banda destacada no topo
+  const anuncioRecente = anuncios[0] ?? null
 
   // Secção "O que está a acontecer": por data, do mais próximo ao mais
   // distante — e sem o passado (a homepage é o "agora"; o histórico
@@ -155,6 +160,9 @@ export default async function PaginaInicio({ searchParams }) {
           )}
         </div>
       </div>
+
+      {/* Anúncio mais recente da coordenação */}
+      {anuncioRecente && <BandaAnuncio anuncio={anuncioRecente} total={anuncios.length} />}
 
       {/* Banda KPI com réguas verticais */}
       <div className="grid grid-cols-2 lg:grid-cols-4 border-b border-brand-divider">
@@ -460,5 +468,40 @@ function DestaqueReuniao({ reuniao }) {
         </span>
       </div>
     </Link>
+  )
+}
+
+/**
+ * Banda do anúncio mais recente da coordenação — destaque editorial no
+ * topo do painel. Ligação para /anuncios, onde está o histórico completo.
+ */
+function BandaAnuncio({ anuncio, total }) {
+  return (
+    <a
+      href="/anuncios"
+      className="group block mt-6 border-y border-brand-accent/30 bg-brand-accent/[0.06] hover:bg-brand-accent/[0.09] transition-colors"
+    >
+      <div className="flex items-center gap-4 py-4 px-1">
+        <span className="shrink-0 w-10 h-10 rounded-full bg-brand-accent/15 text-brand-accent grid place-items-center">
+          <Megaphone size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-brand-accent">
+            {anuncio.reuniao ? 'Resumo de reunião' : 'Anúncio da coordenação'}
+          </p>
+          <p className="text-[15px] font-bold text-brand-deep mt-0.5 truncate group-hover:text-brand-primary transition-colors">
+            {anuncio.titulo}
+          </p>
+          <p className="text-[12.5px] text-brand-deep/55 mt-0.5 line-clamp-1">
+            {anuncio.corpo}
+          </p>
+        </div>
+        {total > 1 && (
+          <span className="badge bg-brand-accent/10 text-brand-accent shrink-0 normal-case">
+            +{total - 1}
+          </span>
+        )}
+      </div>
+    </a>
   )
 }

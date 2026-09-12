@@ -9,6 +9,7 @@ export default function SecaoResumo({ reuniaoId, resumo, ataPublicada, estado, e
   const router = useRouter()
   const [aEditar, setAEditar] = useState(false)
   const [texto, setTexto] = useState(resumo || '')
+  const [anunciar, setAnunciar] = useState(false)
   const [aProcessar, setAProcessar] = useState(null)
   const [erro, setErro] = useState(null)
 
@@ -78,7 +79,7 @@ export default function SecaoResumo({ reuniaoId, resumo, ataPublicada, estado, e
             {erro && <p className="text-sm text-red-600">{erro}</p>}
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => acao(() => publicarResumo(reuniaoId, texto))}
+                onClick={() => acao(() => publicarResumo(reuniaoId, texto, anunciar))}
                 disabled={aProcessar === 'form' || !texto.trim()}
                 className="btn btn-primary btn-small"
                 title="Publica a ata e congela as notas"
@@ -86,6 +87,15 @@ export default function SecaoResumo({ reuniaoId, resumo, ataPublicada, estado, e
                 {aProcessar === 'form' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 Publicar ata (congela notas)
               </button>
+              <label className="flex items-center gap-2 text-[13px] text-brand-deep/70 select-none cursor-pointer px-1">
+                <input
+                  type="checkbox"
+                  checked={anunciar}
+                  onChange={(e) => setAnunciar(e.target.checked)}
+                  className="accent-brand-primary w-4 h-4"
+                />
+                Publicar também como anúncio (toda a equipa, com email)
+              </label>
               <button
                 onClick={() => acao(() => guardarRascunhoResumo(reuniaoId, texto))}
                 disabled={aProcessar === 'form'}
