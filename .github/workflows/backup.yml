@@ -70,8 +70,16 @@ jobs:
           echo "TABELAS=$TABELAS" >> "$GITHUB_ENV"
           ls -lh "gestao-$STAMP.dump"
 
+      - name: Detetar se a key de storage está disponível
+        env:
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # 'secrets' não pode ser usado diretamente em `if:` — passa por
+          # GITHUB_ENV para o passo seguinte decidir.
+          if [ -n "$KEY" ]; then echo "TEM_KEY=sim" >> "$GITHUB_ENV"; else echo "TEM_KEY=nao" >> "$GITHUB_ENV"; fi
+
       - name: Verificação opcional do bucket de storage
-        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        if: env.TEM_KEY == 'sim'
         env:
           SUPABASE_URL: https://zmvqtawocfixphqikndn.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -82,7 +90,10 @@ jobs:
           curl -sS --max-time 20 \
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            "$SUPABASE_URL/storage/v1/object/list/documentos?limit=1&count=exact" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            -d '{"prefix":"","limit":1,"offset":0,"count":"exact"}' \
+            "$SUPABASE_URL/storage/v1/object/list/documentos" \
             | head -c 400 || echo "(verificação do bucket falhou — não bloqueia o backup)"
 
       - name: Guardar o backup como artefacto

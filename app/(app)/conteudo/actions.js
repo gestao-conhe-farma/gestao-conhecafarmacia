@@ -11,11 +11,24 @@ import { revalidatePath } from 'next/cache'
 const PLATAFORMAS = ['facebook', 'instagram', 'tiktok', 'youtube']
 const ESTADOS = ['ideia', 'planeado', 'produzido', 'agendado', 'publicado']
 
-function validar({ titulo, plataforma, dataPublicacao, estado }) {
+function validar({ titulo, plataforma, dataPublicacao, estado, linkPublicacao }) {
   if (!titulo?.trim()) return 'O tema é obrigatório.'
   if (!PLATAFORMAS.includes(plataforma)) return 'Plataforma inválida.'
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPublicacao ?? '')) return 'Indica a data de saída.'
   if (estado && !ESTADOS.includes(estado)) return 'Estado inválido.'
+  // O link vira href numa âncora — só http(s). Bloqueia javascript:, data:,
+  // vbscript: e afins (um link malicioso seria armazenado por qualquer membro
+  // e executado no browser de quem clicasse).
+  if (linkPublicacao?.trim()) {
+    try {
+      const u = new URL(linkPublicacao.trim())
+      if (!['http:', 'https:'].includes(u.protocol)) {
+        return 'O link da publicação tem de começar por http:// ou https://.'
+      }
+    } catch {
+      return 'O link da publicação não é um URL válido.'
+    }
+  }
   return null
 }
 
