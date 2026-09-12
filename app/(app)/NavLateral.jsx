@@ -11,6 +11,8 @@ import {
   Settings,
   FolderOpen,
   MessagesSquare,
+  Handshake,
+  Stethoscope,
 } from 'lucide-react'
 
 // Chaves de texto → componentes (ícones não podem atravessar a fronteira
@@ -22,6 +24,8 @@ const ICONES = {
   entrevistas: CalendarCheck,
   reunioes: MessagesSquare,
   documentos: FolderOpen,
+  entidades: Handshake,
+  profissionais: Stethoscope,
   equipa: Users,
   definicoes: Settings,
 }

@@ -97,7 +97,8 @@ export async function atualizarAtividade(atividadeId, payload) {
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const { titulo, descricao, prazo, local, materiais,
-          orcamento, publico_alvo, publico_esperado } = payload
+          orcamento, publico_alvo, publico_esperado,
+          entidades, profissionalId } = payload
   if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
   if (orcamento != null && (isNaN(Number(orcamento)) || Number(orcamento) < 0)) {
     return { ok: false, erro: 'Orçamento inválido.' }
@@ -121,6 +122,47 @@ export async function atualizarAtividade(atividadeId, payload) {
     .eq('id', atividadeId)
 
   if (error) return { ok: false, erro: error.message }
+
+  // Entidades ligadas (parcerias/patrocínios): sincroniza a lista
+  if (entidades !== undefined) {
+    const { data: ligadas } = await supabase
+      .from('atividade_entidades')
+      .select('entidade_id')
+      .eq('atividade_id', atividadeId)
+    const idsAtuais = (ligadas ?? []).map((l) => l.entidade_id)
+    const idsNovos = (entidades ?? []).map((e) => e.entidade_id)
+
+    const aRemover = idsAtuais.filter((eid) => !idsNovos.includes(eid))
+    if (aRemover.length) {
+      await supabase
+        .from('atividade_entidades')
+        .delete()
+        .eq('atividade_id', atividadeId)
+        .in('entidade_id', aRemover)
+    }
+
+    // …e insere as que entraram (papel pode ter mudado)
+    for (const e of entidades ?? []) {
+      await supabase.from('atividade_entidades').upsert(
+        { atividade_id: atividadeId, entidade_id: e.entidade_id, papel: e.papel ?? 'parceiro' },
+        { onConflict: 'atividade_id,entidade_id' }
+      )
+    }
+  }
+
+  // Profissional externo entrevistado (entrevistas): 1 ou nenhum
+  if (profissionalId !== undefined) {
+    await supabase
+      .from('atividade_profissionais')
+      .delete()
+      .eq('atividade_id', atividadeId)
+    if (profissionalId) {
+      const { error: errProf } = await supabase
+        .from('atividade_profissionais')
+        .insert({ atividade_id: atividadeId, profissional_id: profissionalId })
+      if (errProf) return { ok: false, erro: errProf.message }
+    }
+  }
 
   // Materiais: sincroniza a checklist com o texto do formulário
   // (itens existentes mantêm o estado de marcação; por nome)

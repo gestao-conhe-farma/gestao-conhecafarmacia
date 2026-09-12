@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   LogOut, Menu, Moon, Plus, Sun, X, ChevronRight,
   LayoutDashboard, ClipboardList, CheckCircle2, Users, CalendarCheck, Settings, FolderOpen, MessagesSquare,
+  Handshake, Stethoscope,
 } from 'lucide-react'
 import { useTema } from '@/components/TemaProvider'
 
@@ -19,6 +20,8 @@ const ICONES = {
   entrevistas: CalendarCheck,
   reunioes: MessagesSquare,
   documentos: FolderOpen,
+  entidades: Handshake,
+  profissionais: Stethoscope,
   equipa: Users,
   definicoes: Settings,
 }

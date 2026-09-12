@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { getUtilizadorAtual } from '@/lib/supabase/server'
+import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import {
   obterAtividade,
   listarSubtarefas,
@@ -25,11 +25,17 @@ export default async function PaginaAtividade({ params }) {
   const atividade = await obterAtividade(id)
   if (!atividade) notFound()
 
-  const [subtarefas, participantes, filhas, equipa] = await Promise.all([
+  const supabase = await createClient()
+
+  const [subtarefas, participantes, filhas, equipa, entidades, profissionais] = await Promise.all([
     listarSubtarefas({ atividadeId: id }),
     atividade.tipo === 'entrevista' ? listarParticipantes(id) : Promise.resolve([]),
     atividade.tipo === 'evento' ? listarAtividadesFilhas(id) : Promise.resolve([]),
     listarEquipa(),
+    supabase.from('entidades').select('id, nome, tipo').eq('ativo', true).order('nome'),
+    atividade.tipo === 'entrevista'
+      ? supabase.from('profissionais').select('id, nome, profissao').eq('ativo', true).order('nome')
+      : Promise.resolve({ data: [] }),
   ])
 
   const ehSuper = pessoa.role === 'super_admin'
@@ -156,6 +162,51 @@ export default async function PaginaAtividade({ params }) {
           </div>
         )}
 
+        {/* Entidades ligadas: parceiros e patrocinadores */}
+        {atividade.atividade_entidades?.length > 0 && (
+          <div className="mt-5">
+            <span className="meta-label">Entidades</span>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {atividade.atividade_entidades.map((l) =>
+                l.entidades ? (
+                  <Link
+                    key={l.entidade_id}
+                    href="/entidades"
+                    className="text-[13px] font-medium text-brand-deep/75 bg-brand-bg-alt border border-brand-divider rounded-lg px-2.5 py-1 hover:border-brand-primary/40 transition-colors"
+                  >
+                    {l.entidades.nome}
+                    <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-brand-primary">
+                      {l.papel}
+                    </span>
+                  </Link>
+                ) : null
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Profissional externo entrevistado */}
+        {atividade.tipo === 'entrevista' && atividade.atividade_profissionais?.length > 0 && (
+          <div className="mt-5">
+            <span className="meta-label">Profissional convidado</span>
+            <div className="mt-1">
+              {atividade.atividade_profissionais.map((l) =>
+                l.profissionais ? (
+                  <p key={l.profissional_id} className="text-sm font-semibold text-brand-deep">
+                    {l.profissionais.nome}
+                    {l.profissionais.profissao && (
+                      <span className="font-normal text-brand-deep/55"> · {l.profissionais.profissao}</span>
+                    )}
+                    {l.profissionais.instituicao && (
+                      <span className="font-normal text-brand-deep/45"> · {l.profissionais.instituicao}</span>
+                    )}
+                  </p>
+                ) : null
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Editar detalhes: coordenação */}
         {ehSuper && (
           <div className="mt-6">
@@ -170,7 +221,15 @@ export default async function PaginaAtividade({ params }) {
                 orcamento: atividade.orcamento,
                 publico_alvo: atividade.publico_alvo,
                 publico_esperado: atividade.publico_esperado,
+                tipo: atividade.tipo,
+                ligacoesEntidades: (atividade.atividade_entidades ?? []).map((l) => ({
+                  entidade_id: l.entidade_id,
+                  papel: l.papel,
+                })),
+                profissionalId: atividade.atividade_profissionais?.[0]?.profissional_id ?? null,
               }}
+              entidades={entidades.data ?? []}
+              profissionais={profissionais.data ?? []}
             />
           </div>
         )}

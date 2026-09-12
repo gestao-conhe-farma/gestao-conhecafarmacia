@@ -7,10 +7,11 @@ import { atualizarAtividade } from '../actions'
 
 /**
  * Editar detalhes de uma atividade/evento/entrevista (só coordenação):
- * título, descrição, prazo, local, materiais, orçamento e público.
+ * título, descrição, prazo, local, materiais, orçamento, público,
+ * entidades (parceiro/patrocinador) e profissional entrevistado.
  * Vive no cabeçalho da página de detalhe, colado às meta-informações.
  */
-export default function EditarDetalhes({ atividade }) {
+export default function EditarDetalhes({ atividade, entidades = [], profissionais = [] }) {
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [titulo, setTitulo] = useState(atividade.titulo)
@@ -30,8 +31,24 @@ export default function EditarDetalhes({ atividade }) {
   const [publicoEsperado, setPublicoEsperado] = useState(
     atividade.publico_esperado != null ? String(atividade.publico_esperado) : ''
   )
+  const [entidadesSel, setEntidadesSel] = useState(
+    (atividade.ligacoesEntidades ?? []).map((l) => ({ entidade_id: l.entidade_id, papel: l.papel }))
+  )
+  const [profissionalId, setProfissionalId] = useState(atividade.profissionalId || '')
   const [aGuardar, setAGuardar] = useState(false)
   const [erro, setErro] = useState(null)
+
+  function alternarEntidade(id) {
+    setEntidadesSel((atual) =>
+      atual.some((e) => e.entidade_id === id)
+        ? atual.filter((e) => e.entidade_id !== id)
+        : [...atual, { entidade_id: id, papel: 'parceiro' }]
+    )
+  }
+
+  function papelEntidade(id, papel) {
+    setEntidadesSel((atual) => atual.map((e) => (e.entidade_id === id ? { ...e, papel } : e)))
+  }
 
   async function guardar(e) {
     e.preventDefault()
@@ -47,6 +64,8 @@ export default function EditarDetalhes({ atividade }) {
         orcamento: orcamento === '' ? null : orcamento,
         publico_alvo: publicoAlvo,
         publico_esperado: publicoEsperado === '' ? null : publicoEsperado,
+        entidades: entidadesSel,
+        profissionalId: profissionalId || null,
       })
       if (!r.ok) {
         setErro(r.erro)
@@ -181,6 +200,70 @@ export default function EditarDetalhes({ atividade }) {
           onChange={(e) => setPublicoAlvo(e.target.value)}
         />
       </div>
+
+      {/* Entidades: parceiros / patrocinadores ligados */}
+      {entidades.length > 0 && (
+        <div className="form-group">
+          <span className="form-label">
+            Entidades ligadas <span className="text-brand-deep/40 font-normal">(parceiros e patrocinadores)</span>
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {entidades.map((ent) => {
+              const sel = entidadesSel.find((e) => e.entidade_id === ent.id)
+              return (
+                <span
+                  key={ent.id}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+                    sel
+                      ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                      : 'border-brand-divider text-brand-deep/55'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => alternarEntidade(ent.id)}
+                    className="font-semibold"
+                  >
+                    {ent.nome}
+                  </button>
+                  {sel && (
+                    <select
+                      value={sel.papel}
+                      onChange={(e) => papelEntidade(ent.id, e.target.value)}
+                      className="bg-transparent text-[11px] font-bold uppercase tracking-wide outline-none cursor-pointer"
+                    >
+                      <option value="parceiro">parceiro</option>
+                      <option value="patrocinador">patrocinador</option>
+                    </select>
+                  )}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Profissional externo entrevistado (só entrevistas) */}
+      {atividade.tipo === 'entrevista' && profissionais.length > 0 && (
+        <div className="form-group">
+          <label className="form-label" htmlFor="ea-profissional">
+            Profissional externo convidado <span className="text-brand-deep/40 font-normal">(da lista de profissionais)</span>
+          </label>
+          <select
+            id="ea-profissional"
+            className="form-input"
+            value={profissionalId}
+            onChange={(e) => setProfissionalId(e.target.value)}
+          >
+            <option value="">— nenhum (só membros da equipa) —</option>
+            {profissionais.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}{p.profissao ? ` — ${p.profissao}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {erro && (
         <p className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
