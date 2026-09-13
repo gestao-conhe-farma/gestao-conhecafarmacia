@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, getUtilizadorAtual } from '@/lib/supabase/server'
+import { createClient, createAdminClient, getUtilizadorAtual } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BUCKET, MIME_ACEITES, EXT_PROIBIDAS, TAMANHO_MAX_BYTES } from '@/lib/documentos'
 import { registarEvento } from '@/lib/auditoria'
@@ -40,12 +40,22 @@ export async function registarDocumento(payload) {
 
   // O ficheiro tem de existir no bucket sob o path indicado — impede
   // registos fantasma que apontem para paths de outros documentos.
+  //
+  // NOTA: a verificação usa o cliente admin (service role). Com o
+  // cliente da sessão rebentava sempre: a policy "ler ficheiros
+  // visiveis" só mostra objetos que já têm linha na tabela documentos,
+  // e essa linha só nasce AQUI — ou seja, o list() voltava vazio e o
+  // upload nunca conseguia ser registado.
   const pasta = storagePath.split('/').slice(0, -1).join('/')
   const nomeNoBucket = storagePath.split('/').pop()
-  const { data: objetos, error: erroObjeto } = await supabase.storage
+  const admin = await createAdminClient()
+  const { data: objetos, error: erroObjeto } = await admin.storage
     .from(BUCKET)
     .list(pasta, { search: nomeNoBucket, limit: 100 })
   const ficheiroExiste = objetos?.some((o) => o.name === nomeNoBucket)
+  if (erroObjeto) {
+    console.error('[documentos] verificação de ficheiro falhou:', pasta, erroObjeto.message)
+  }
   if (erroObjeto || !ficheiroExiste) {
     return { ok: false, erro: 'Ficheiro não encontrado no armazenamento — volta a carregá-lo.' }
   }
