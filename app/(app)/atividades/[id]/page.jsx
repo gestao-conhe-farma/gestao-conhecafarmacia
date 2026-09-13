@@ -56,8 +56,10 @@ export default async function PaginaAtividade({ params }) {
   const temSecaoExtra = atividade.tipo === 'entrevista' || atividade.tipo === 'evento'
   const numSubtarefas = temSecaoExtra ? '02' : '01'
   const numNova = temSecaoExtra ? '03' : '02'
+  // A secção Conclusão só existe para a coordenação — a numeração da
+  // Conversa salta-a para os membros.
   const numConclusao = temSecaoExtra ? '04' : '03'
-  const numConversa = temSecaoExtra ? '05' : '04'
+  const numConversa = ehSuper ? (temSecaoExtra ? '05' : '04') : (temSecaoExtra ? '04' : '03')
 
   return (
     <div className="container-app max-w-4xl">
@@ -310,22 +312,26 @@ export default async function PaginaAtividade({ params }) {
         </div>
       </section>
 
-      {/* Conclusão — coordenação ou responsável atribuído (paridade com
-          subtarefas). Eventos mantêm o painel próprio com audiência real. */}
-      <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
-        <span className="sec-num">{numConclusao}</span>
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold text-brand-deep tracking-tight">Conclusão</h2>
-          <p className="text-[13.5px] text-brand-deep/55 mt-1 leading-relaxed max-w-xl">
-            {atividade.tipo === 'evento'
-              ? 'Marca o evento como realizado. Para registar a audiência real, usa o painel do evento mais acima.'
-              : 'A coordenação e os responsáveis atribuídos podem marcar como concluída — e reabrir, se for preciso.'}
-          </p>
-          <div className="mt-5">
-            <PainelConclusao atividadeId={id} statusEvento={atividade.status_evento} />
+      {/* Conclusão — apenas coordenação. Os membros continuam a poder
+          concluir as suas subtarefas; marcar o todo como concluído é
+          decisão da coordenação. Eventos mantêm o painel próprio com
+          audiência real. */}
+      {ehSuper && (
+        <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">
+          <span className="sec-num">{numConclusao}</span>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-brand-deep tracking-tight">Conclusão</h2>
+            <p className="text-[13.5px] text-brand-deep/55 mt-1 leading-relaxed max-w-xl">
+              {atividade.tipo === 'evento'
+                ? 'Marca o evento como realizado. Para registar a audiência real, usa o painel do evento mais acima.'
+                : 'Marca como concluída — e reabre, se for preciso. Membros concluem as suas subtarefas em cada secção.'}
+            </p>
+            <div className="mt-5">
+              <PainelConclusao atividadeId={id} statusEvento={atividade.status_evento} />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Conversa — chat colado a esta atividade (RLS segue a atividade) */}
       <section className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-5 gap-y-4 py-9 border-t border-brand-divider">

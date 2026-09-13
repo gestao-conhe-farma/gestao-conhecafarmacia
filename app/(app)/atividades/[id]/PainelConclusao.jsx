@@ -11,8 +11,9 @@ import { concluirAtividade, reabrirAtividadeConcluida } from '../actions'
  * o fluxo das subtarefas. Aparece no fundo da página da atividade.
  *
  * Permissões (validadas de novo no server action):
- *  - coordenação (super_admin): sempre
- *  - responsável atribuído (atividade_responsaveis): sempre
+ *  - coordenação (super_admin): única com acesso — concluir o TODO
+ *    (atividade/evento/entrevista) é decisão da coordenação; membros
+ *    concluem as suas subtarefas nas secções próprias.
  *
  * Concluir é reversível — "Reabrir" volta a pôr em andamento.
  * Eventos mantêm o PainelEvento próprio (com audiência real) em cima;

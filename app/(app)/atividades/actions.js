@@ -419,8 +419,9 @@ export async function reabrirEvento(atividadeId, novoEstado) {
 }
 
 /**
- * Concluir uma atividade/evento/entrevista — paridade com subtarefas.
- * Pode: a coordenação (super_admin) ou o responsável atribuído.
+ * Concluir uma atividade/evento/entrevista — exclusivo da coordenação.
+ * Os membros continuam a poder concluir as PRÓPRIAS subtarefas, mas
+ * marcar o todo como concluído é decisão da coordenação (super_admin).
  * O estado (status_evento) é genérico na base de dados — vale para os
  * três tipos; eventos continuam a ter o PainelEvento com audiência real.
  */
@@ -428,21 +429,16 @@ export async function concluirAtividade(atividadeId) {
   const atual = await getUtilizadorAtual()
   if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
   const { pessoa } = atual
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Apenas a coordenação pode concluir atividades.' }
 
   const supabase = await createClient()
   const { data: atividade } = await supabase
     .from('atividades')
-    .select('tipo, atividade_responsaveis(pessoa_id)')
+    .select('tipo')
     .eq('id', atividadeId)
     .single()
 
   if (!atividade) return { ok: false, erro: 'Atividade não encontrada.' }
-
-  const ehSuper = pessoa.role === 'super_admin'
-  const ehResponsavel = (atividade.atividade_responsaveis ?? []).some(
-    (r) => r.pessoa_id === pessoa.id
-  )
-  if (!ehSuper && !ehResponsavel) return { ok: false, erro: 'Sem permissão.' }
 
   const { error } = await supabase
     .from('atividades')
@@ -456,26 +452,24 @@ export async function concluirAtividade(atividadeId) {
   return { ok: true }
 }
 
-/** Reabrir uma atividade concluída (desfazer conclusão) — mesma permissão. */
+/**
+ * Reabrir uma atividade concluída (desfazer conclusão).
+ * Mesma permissão da conclusão: apenas coordenação.
+ */
 export async function reabrirAtividadeConcluida(atividadeId) {
   const atual = await getUtilizadorAtual()
   if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
   const { pessoa } = atual
+  if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Apenas a coordenação pode concluir atividades.' }
 
   const supabase = await createClient()
   const { data: atividade } = await supabase
     .from('atividades')
-    .select('tipo, atividade_responsaveis(pessoa_id)')
+    .select('tipo')
     .eq('id', atividadeId)
     .single()
 
   if (!atividade) return { ok: false, erro: 'Atividade não encontrada.' }
-
-  const ehSuper = pessoa.role === 'super_admin'
-  const ehResponsavel = (atividade.atividade_responsaveis ?? []).some(
-    (r) => r.pessoa_id === pessoa.id
-  )
-  if (!ehSuper && !ehResponsavel) return { ok: false, erro: 'Sem permissão.' }
 
   const { error } = await supabase
     .from('atividades')
