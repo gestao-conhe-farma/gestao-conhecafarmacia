@@ -7,11 +7,13 @@ import {
   Eye,
   Loader2,
   Lock,
+  Pencil,
   Trash2,
 } from 'lucide-react'
 import { formatarTamanho } from '@/lib/documentos'
 import { eliminarDocumento } from './actions'
 import PreVisualizador from './PreVisualizador'
+import EditarDocumento from './EditarDocumento'
 import { useConfirmacao, NotaFlutuante } from '@/components/CaixaConfirmacao'
 
 function chipFicheiro(mime) {
@@ -23,10 +25,11 @@ function chipFicheiro(mime) {
   return { cls: 'file-pdf', label: 'PDF' }
 }
 
-export default function ListaDocumentos({ documentos, ehSuper }) {
+export default function ListaDocumentos({ documentos, categorias = [], ehSuper }) {
   const router = useRouter()
   const [aEliminar, setAEliminar] = useState(null)
   const [emPreview, setEmPreview] = useState(null)
+  const [emEdicao, setEmEdicao] = useState(null)
   const [aviso, setAviso] = useState(null)
   const [pedirConfirmacao, caixaConfirmacao] = useConfirmacao()
 
@@ -78,6 +81,11 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
                   </span>
                 )}
               </div>
+              {doc.descricao && (
+                <p className="text-[13px] text-brand-deep/60 leading-snug mt-0.5 line-clamp-2">
+                  {doc.descricao}
+                </p>
+              )}
               <p className="text-xs font-mono tracking-wide text-brand-deep/45 mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
                 {doc.codigo && <span>{doc.codigo}</span>}
                 <span className="font-sans">{doc.categoria?.nome ?? 'Sem categoria'}</span>
@@ -117,6 +125,16 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
                   </a>
                   {ehSuper && (
                     <button
+                      onClick={() => setEmEdicao(doc)}
+                      aria-label={`Editar ${doc.titulo}`}
+                      title="Editar"
+                      className="w-9 h-9 grid place-items-center rounded-lg border border-transparent text-brand-deep/45 hover:text-brand-primary hover:border-brand-divider transition-colors"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  )}
+                  {ehSuper && (
+                    <button
                       onClick={() => eliminar(doc.id, doc.titulo)}
                       aria-label={`Eliminar ${doc.titulo}`}
                       title="Eliminar"
@@ -134,6 +152,9 @@ export default function ListaDocumentos({ documentos, ehSuper }) {
     </ul>
 
     {emPreview && <PreVisualizador doc={emPreview} fechar={() => setEmPreview(null)} />}
+    {emEdicao && (
+      <EditarDocumento doc={emEdicao} categorias={categorias} fechar={() => setEmEdicao(null)} />
+    )}
     {aviso && <NotaFlutuante mensagem={aviso} aoFechar={() => setAviso(null)} />}
     {caixaConfirmacao}
     </>

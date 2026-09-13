@@ -1,0 +1,12 @@
+
+CARTAS CONHEÇA FARMÁCIA
+
+CF-MEM: Anúncios a serem feitos internamente na Equipa Conheça Farmáca
+
+CEF-PAR: Cartas a serem enviada aos Parceiros da Conheça Farmácia
+
+CEF-PAT: Cartas a serem enviadas aos Patrocinadores de Eventos do Conheça Farmácia
+
+CEF-REG: Cartas a serem enviadas as entidades reguladoras de saúde como a OFA-CAPFA e outras ordens e seus respectivos membros.
+
+CEF-SOL: Cartas a serem enviadas a Solicitações feitas pela Conheça Farmácia como a solicitação de um espaço para a realização de uma atividade!

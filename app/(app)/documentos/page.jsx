@@ -74,7 +74,7 @@ export default async function PaginaDocumentos({ searchParams }) {
             </p>
           </div>
         ) : (
-          <ListaDocumentos documentos={documentos} ehSuper={ehSuper} />
+          <ListaDocumentos documentos={documentos} categorias={categorias} ehSuper={ehSuper} />
         )}
       </div>
     </div>

@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, FileUp, Loader2, Lock, UploadCloud } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
-import { BUCKET, EXT_ACEITES, TAMANHO_MAX_MB, construirPath, ficheiroValido } from '@/lib/documentos'
+import {
+  BUCKET,
+  EXT_ACEITES,
+  TAMANHO_MAX_MB,
+  construirPath,
+  ficheiroValido,
+  sugerirFinalidade,
+} from '@/lib/documentos'
 import { registarDocumento } from '../actions'
 
 export default function FormNovoDocumento({ categorias }) {
@@ -37,10 +44,32 @@ export default function FormNovoDocumento({ categorias }) {
       return
     }
     setFicheiro(f)
-    // Sugere o título a partir do nome do ficheiro (sem extensão)
+    // Sugere o título a partir do nome do ficheiro (sem extensão).
+    // Muitos ficheiros começam pelo código (CF-PAR-001-2026…) — também
+    // sugere a finalidade a partir dele.
     if (!titulo) {
-      setTitulo(f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '))
+      const nomeLimpo = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ')
+      setTitulo(nomeLimpo)
     }
+    if (!codigo) {
+      const m = f.name.toUpperCase().match(/\bCF-[A-Z]{3}\b/)
+      if (m) {
+        setCodigo(m[0])
+        sincronizarSugestao({ novoCodigo: m[0] })
+        return
+      }
+    }
+    sincronizarSugestao()
+  }
+
+  // A descrição sugere-se a partir do código (CF-XXX) e, em falta,
+  // da categoria — mas o que estiver escrito NUNCA é sobrescrito.
+  function sincronizarSugestao({ novoCodigo, novaCategoriaId } = {}) {
+    const codigoEfetivo = novoCodigo !== undefined ? novoCodigo : codigo
+    const catIdEfetivo = novaCategoriaId !== undefined ? novaCategoriaId : categoriaId
+    const catNome = categorias.find((c) => c.id === catIdEfetivo)?.nome
+    const sugestao = sugerirFinalidade(codigoEfetivo, catNome)
+    if (sugestao && !descricao.trim()) setDescricao(sugestao)
   }
 
   async function submeter(e) {
@@ -168,7 +197,10 @@ export default function FormNovoDocumento({ categorias }) {
             id="doc-cat"
             className="form-select"
             value={categoriaId}
-            onChange={(e) => setCategoriaId(e.target.value)}
+            onChange={(e) => {
+              setCategoriaId(e.target.value)
+              sincronizarSugestao({ novaCategoriaId: e.target.value })
+            }}
           >
             <option value="">— Sem categoria —</option>
             {categorias.map((c) => (
@@ -182,19 +214,23 @@ export default function FormNovoDocumento({ categorias }) {
           <input
             id="doc-codigo"
             className="form-input"
-            placeholder="Ex.: CF-PAT-001-2026"
-            value={codigo}
-            onChange={(e) => setCodigo(e.target.value)}
-          />
+          placeholder="Ex.: CF-PAT-001-2026"
+          value={codigo}
+          onChange={(e) => {
+            setCodigo(e.target.value)
+            sincronizarSugestao({ novoCodigo: e.target.value })
+          }}
+        />
         </div>
-      </div>
-
-      <div className="form-group">
-        <label className="form-label" htmlFor="doc-desc">Descrição (opcional)</label>
+      </div>      <div className="form-group">
+        <label className="form-label" htmlFor="doc-desc">
+          Descrição — para que serve
+        </label>
         <textarea
           id="doc-desc"
           className="form-textarea"
-          placeholder="Contexto, versão, notas…"
+          rows={2}
+          placeholder="Sugerida pelo código (CF-XXX) ou categoria — edita à vontade."
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
         />

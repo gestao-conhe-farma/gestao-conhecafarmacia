@@ -74,6 +74,51 @@ export async function registarDocumento(payload) {
 }
 
 /**
+ * Atualiza os metadados de um documento (coordenação apenas).
+ * O ficheiro em si não muda — só título, descrição, código,
+ * categoria e a marca de restrito.
+ */
+export async function editarDocumento(documentoId, payload) {
+  const { pessoa } = await getUtilizadorAtual()
+  if (pessoa.role !== 'super_admin') {
+    return { ok: false, erro: 'Sem permissão.' }
+  }
+
+  const { titulo, descricao, categoriaId, codigo, restrito } = payload ?? {}
+  if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
+
+  const supabase = await createClient()
+
+  // Categoria tem de existir — impede apontar para um id inexistente.
+  if (categoriaId) {
+    const { data: cat } = await supabase
+      .from('doc_categorias')
+      .select('id')
+      .eq('id', categoriaId)
+      .single()
+    if (!cat) return { ok: false, erro: 'Categoria não encontrada.' }
+  }
+
+  const { error } = await supabase
+    .from('documentos')
+    .update({
+      titulo: titulo.trim(),
+      descricao: descricao?.trim() || null,
+      categoria_id: categoriaId || null,
+      codigo: codigo?.trim() || null,
+      restrito: Boolean(restrito),
+    })
+    .eq('id', documentoId)
+
+  if (error) return { ok: false, erro: error.message }
+
+  await registarEvento('documento.editado', { documento_id: documentoId, titulo: titulo.trim() }, pessoa.id)
+
+  revalidatePath('/documentos')
+  return { ok: true }
+}
+
+/**
  * Elimina o documento (BD + ficheiro no Storage). Coordenação apenas.
  */
 export async function eliminarDocumento(documentoId) {
