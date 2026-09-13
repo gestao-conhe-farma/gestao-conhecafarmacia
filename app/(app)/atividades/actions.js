@@ -10,7 +10,9 @@ import { revalidatePath } from 'next/cache'
  * Nascem já aprovadas/visíveis.
  */
 export async function criarAtividade(payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') {
     return { ok: false, erro: 'Sem permissão.' }
   }
@@ -93,7 +95,9 @@ export async function criarAtividade(payload) {
  * (parent, responsáveis, participantes) ficam intocados.
  */
 export async function atualizarAtividade(atividadeId, payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const { titulo, descricao, prazo, local, materiais,
@@ -211,7 +215,9 @@ export async function atualizarAtividade(atividadeId, payload) {
  * Fica registo de quem marcou e quando.
  */
 export async function alternarMaterial(atividadeId, materialId, feito) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -229,7 +235,9 @@ export async function alternarMaterial(atividadeId, materialId, feito) {
   return { ok: true }
 }
 export async function convidarParticipantes(atividadeId, pessoaIds) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -264,7 +272,9 @@ export async function convidarParticipantes(atividadeId, pessoaIds) {
 
 /** O convidado confirma presença. */
 export async function confirmarParticipacao(atividadeId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -287,7 +297,9 @@ export async function confirmarParticipacao(atividadeId) {
  * participante e a super_admin.
  */
 export async function desconfirmarParticipacao(atividadeId, motivo = null) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!motivo || !motivo.trim()) {
     return { ok: false, erro: 'O justificativo é obrigatório.' }
   }
@@ -341,7 +353,9 @@ export async function desconfirmarParticipacao(atividadeId, motivo = null) {
  * Se não for passada, mantém a existente (ou fica sem registo).
  */
 export async function concluirEvento(atividadeId, publicoReal = null) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (publicoReal != null && (isNaN(Number(publicoReal)) || Number(publicoReal) < 0)) {
     return { ok: false, erro: 'N.º de participantes real inválido.' }
@@ -365,7 +379,9 @@ export async function concluirEvento(atividadeId, publicoReal = null) {
 
 /** Corrigir a audiência real de um evento já concluído (super_admin). */
 export async function definirPublicoReal(atividadeId, publicoReal) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (publicoReal === null || publicoReal === '' || isNaN(Number(publicoReal)) || Number(publicoReal) < 0) {
     return { ok: false, erro: 'N.º de participantes real inválido.' }
@@ -385,7 +401,9 @@ export async function definirPublicoReal(atividadeId, publicoReal) {
 
 /** Voltar a abrir evento (planeada/em_andamento). */
 export async function reabrirEvento(atividadeId, novoEstado) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -407,7 +425,9 @@ export async function reabrirEvento(atividadeId, novoEstado) {
  * três tipos; eventos continuam a ter o PainelEvento com audiência real.
  */
 export async function concluirAtividade(atividadeId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { data: atividade } = await supabase
@@ -438,7 +458,9 @@ export async function concluirAtividade(atividadeId) {
 
 /** Reabrir uma atividade concluída (desfazer conclusão) — mesma permissão. */
 export async function reabrirAtividadeConcluida(atividadeId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { data: atividade } = await supabase

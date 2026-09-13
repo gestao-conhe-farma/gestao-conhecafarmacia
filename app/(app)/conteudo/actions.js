@@ -33,8 +33,9 @@ function validar({ titulo, plataforma, dataPublicacao, estado, linkPublicacao })
 }
 
 export async function criarConteudo(payload) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão expirada.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const erro = validar(payload)
   if (erro) return { ok: false, erro }
@@ -62,8 +63,9 @@ export async function criarConteudo(payload) {
 }
 
 export async function atualizarConteudo(id, payload) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão expirada.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const erro = validar(payload)
   if (erro) return { ok: false, erro }
@@ -95,8 +97,9 @@ export async function atualizarConteudo(id, payload) {
 
 /** Marcar como publicado com o link (atalho frequente). */
 export async function publicarConteudo(id, link) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão expirada.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -115,8 +118,9 @@ export async function publicarConteudo(id, link) {
 
 /** Desativar (soft delete) — mantém o histórico; apagar é da coordenação. */
 export async function desativarConteudo(id, ativo) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão expirada.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -130,8 +134,9 @@ export async function desativarConteudo(id, ativo) {
 }
 
 export async function eliminarConteudo(id) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão expirada.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') {
     return { ok: false, erro: 'Só a coordenação pode apagar. Desativa o conteúdo em vez disso.' }
   }

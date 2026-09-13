@@ -31,7 +31,9 @@ function limparCampos(payload) {
 
 /** Criar profissional. */
 export async function criarProfissional(payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const campos = limparCampos(payload)
   if (!campos.nome) return { ok: false, erro: 'O nome é obrigatório.' }
@@ -65,7 +67,8 @@ export async function criarProfissional(payload) {
 
 /** Editar profissional (qualquer membro). */
 export async function editarProfissional(id, payload) {
-  await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
 
   const campos = limparCampos(payload)
   if (!campos.nome) return { ok: false, erro: 'O nome é obrigatório.' }
@@ -86,7 +89,8 @@ export async function editarProfissional(id, payload) {
 
 /** Marcar como inativo/ativo (qualquer membro) — não apaga histórico. */
 export async function alternarAtivoProfissional(id, ativo) {
-  await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -101,7 +105,9 @@ export async function alternarAtivoProfissional(id, ativo) {
 
 /** Eliminar definitivamente (super_admin). */
 export async function eliminarProfissional(id) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') {
     return { ok: false, erro: 'Só a coordenação pode eliminar — usa "Marcar indisponível" para esconder da lista.' }
   }

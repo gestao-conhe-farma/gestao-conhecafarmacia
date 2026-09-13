@@ -51,7 +51,7 @@ function proximaDataRegra(config, aPartirDe = new Date()) {
 }
 
 /** Aplica a regra mensal: cria as próximas N reuniões que ainda não existem. */
-async function gerarMensais(supabase, config, quantidade = 3) {
+async function gerarMensais(supabase, config, criadoPor, quantidade = 3) {
   if (!config?.ativa) return 0
   // referência: última reunião mensal existente, ou agora
   const { data: ultima } = await supabase
@@ -83,7 +83,7 @@ async function gerarMensais(supabase, config, quantidade = 3) {
           tipo: 'mensal',
           data_hora: d.toISOString(),
           local: config.local || null,
-          criado_por: (await getUtilizadorAtual()).pessoa.id,
+          criado_por: criadoPor,
         })
         .select('id')
         .maybeSingle()
@@ -98,7 +98,9 @@ async function gerarMensais(supabase, config, quantidade = 3) {
  *  visibilidade: 'equipa' (todos veem) ou 'coordenacao' (só super_admins).
  *  Reunião privada só pode convocar super_admins. */
 export async function criarReuniao(payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const { titulo, tipo, dataHora, local, pauta, participantes, visibilidade } = payload
@@ -157,7 +159,9 @@ export async function criarReuniao(payload) {
 
 /** Gerar as próximas reuniões mensais pela regra configurada (super_admin). */
 export async function gerarReunioesMensais() {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -167,14 +171,16 @@ export async function gerarReunioesMensais() {
     .eq('id', 1)
     .single()
 
-  const criadas = await gerarMensais(supabase, config)
+  const criadas = await gerarMensais(supabase, config, pessoa.id)
   revalidatePath('/reunioes')
   return { ok: true, criadas }
 }
 
 /** Guardar a regra de recorrência (super_admin). */
 export async function guardarConfiguracaoReunioes(config) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const { ativa, modo, semanaDoMes, diaSemana, diaDoMes, hora, local } = config
@@ -208,7 +214,9 @@ export async function guardarConfiguracaoReunioes(config) {
 
 /** Convocar mais pessoas (super_admin). Em reunião privada, só super_admins. */
 export async function convocarParticipantes(reuniaoId, pessoaIds) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -260,7 +268,9 @@ export async function convocarParticipantes(reuniaoId, pessoaIds) {
  * imutável como documento oficial.
  */
 export async function editarReuniao(reuniaoId, payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -298,7 +308,9 @@ export async function editarReuniao(reuniaoId, payload) {
  * deixou de conseguir ver. Ao abrir, os convites mantêm-se.
  */
 export async function mudarVisibilidadeReuniao(reuniaoId, visibilidade) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (!['equipa', 'coordenacao'].includes(visibilidade)) {
     return { ok: false, erro: 'Visibilidade inválida.' }
@@ -346,7 +358,9 @@ export async function mudarVisibilidadeReuniao(reuniaoId, visibilidade) {
  * enquanto a presença não foi registada e a ata não foi publicada.
  */
 export async function removerParticipante(reuniaoId, pessoaId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (pessoaId === pessoa.id) {
     return { ok: false, erro: 'Não podes retirar o teu próprio convite.' }
@@ -381,7 +395,9 @@ export async function removerParticipante(reuniaoId, pessoaId) {
 
 /** O convocado confirma presença (antes da reunião). */
 export async function confirmarPresencaReuniao(reuniaoId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -403,7 +419,9 @@ export async function confirmarPresencaReuniao(reuniaoId) {
  * participante e a super_admin.
  */
 export async function desconfirmarPresencaReuniao(reuniaoId, motivo = null) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!motivo || !motivo.trim()) {
     return { ok: false, erro: 'O justificativo é obrigatório.' }
   }
@@ -453,7 +471,9 @@ export async function desconfirmarPresencaReuniao(reuniaoId, motivo = null) {
 
 /** Marcar presença (presente/ausente/justificado) — super_admin, após a reunião. */
 export async function marcarPresenca(reuniaoId, pessoaId, presenca) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -470,7 +490,9 @@ export async function marcarPresenca(reuniaoId, pessoaId, presenca) {
 
 /** Nota da equipa (todos; bloqueada quando a ata está publicada). */
 export async function adicionarNota(reuniaoId, conteudo) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   const texto = (conteudo ?? '').trim()
   if (!texto) return { ok: false, erro: 'A nota está vazia.' }
 
@@ -490,7 +512,9 @@ export async function adicionarNota(reuniaoId, conteudo) {
 
 /** Editar a própria nota (enquanto a ata não saiu). */
 export async function editarNota(reuniaoId, notaId, conteudo) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   const texto = (conteudo ?? '').trim()
   if (!texto) return { ok: false, erro: 'A nota está vazia.' }
 
@@ -508,7 +532,9 @@ export async function editarNota(reuniaoId, notaId, conteudo) {
 
 /** Apagar nota: o autor (enquanto aberta) ou o super_admin (sempre — moderação). */
 export async function apagarNota(reuniaoId, notaId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { data: nota } = await supabase
@@ -535,7 +561,9 @@ export async function apagarNota(reuniaoId, notaId) {
 
 /** Criar plano (super_admin). */
 export async function criarPlano(reuniaoId, { titulo, descricao, prazo }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (!titulo?.trim()) return { ok: false, erro: 'O título do plano é obrigatório.' }
 
@@ -554,7 +582,9 @@ export async function criarPlano(reuniaoId, { titulo, descricao, prazo }) {
 
 /** Votar num plano: favor/contra/abstencao (qualquer membro). */
 export async function votarPlano(planoId, voto) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!['favor', 'contra', 'abstencao'].includes(voto)) {
     return { ok: false, erro: 'Voto inválido.' }
   }
@@ -570,7 +600,9 @@ export async function votarPlano(planoId, voto) {
 
 /** Retirar o próprio voto. */
 export async function retirarVoto(planoId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   const supabase = await createClient()
   const { error } = await supabase
     .from('reuniao_plano_votos')
@@ -583,7 +615,9 @@ export async function retirarVoto(planoId) {
 
 /** Aprovar/rejeitar plano (super_admin). */
 export async function decidirPlano(reuniaoId, planoId, decisao) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (!['aprovado', 'rejeitado', 'pendente'].includes(decisao)) {
     return { ok: false, erro: 'Decisão inválida.' }
@@ -628,7 +662,9 @@ export async function decidirPlano(reuniaoId, planoId, decisao) {
  * Mini-form: tipo, prazo, responsáveis. Fica ligado à reunião (reuniao_origem).
  */
 export async function converterPlano(reuniaoId, planoId, { tipo, prazo, responsaveis }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -687,7 +723,9 @@ export async function converterPlano(reuniaoId, planoId, { tipo, prazo, responsa
  * equipa (notificação in-app + email), ligado à reunião.
  */
 export async function publicarResumo(reuniaoId, resumo, tambemAnuncio = false) {
-  const { pessoa } = await getUtilizadorAtual()
+  const sessao = await getUtilizadorAtual()
+  if (!sessao) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = sessao
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   const texto = (resumo ?? '').trim()
   if (!texto) return { ok: false, erro: 'Escreve o resumo antes de publicar.' }
@@ -740,7 +778,9 @@ export async function publicarResumo(reuniaoId, resumo, tambemAnuncio = false) {
 
 /** Guardar rascunho do resumo sem publicar (super_admin). */
 export async function guardarRascunhoResumo(reuniaoId, resumo) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -755,7 +795,9 @@ export async function guardarRascunhoResumo(reuniaoId, resumo) {
 
 /** Cancelar reunião (super_admin). */
 export async function cancelarReuniao(reuniaoId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -784,7 +826,9 @@ export async function cancelarReuniao(reuniaoId) {
 
 /** Marcar reunião como realizada sem publicar ata (super_admin). */
 export async function marcarRealizada(reuniaoId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -800,7 +844,9 @@ export async function marcarRealizada(reuniaoId) {
 
 /** Registar anexo após upload para o Storage (super_admin). */
 export async function registarAnexoReuniao(reuniaoId, { storagePath, nomeFicheiro, mimeType, tamanhoBytes }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (!storagePath || !nomeFicheiro) return { ok: false, erro: 'Ficheiro inválido.' }
 
@@ -820,7 +866,9 @@ export async function registarAnexoReuniao(reuniaoId, { storagePath, nomeFicheir
 
 /** Remover anexo (BD + Storage) (super_admin). */
 export async function removerAnexoReuniao(reuniaoId, anexoId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()

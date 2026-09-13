@@ -12,7 +12,9 @@ import { registarEvento } from '@/lib/auditoria'
  * (mesma identidade, histórico preservado) em vez de falhar.
  */
 export async function criarConta({ nome, email, password, role }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   if (!nome?.trim() || !email?.trim() || !password || password.length < 8) {
@@ -92,7 +94,9 @@ export async function criarConta({ nome, email, password, role }) {
 
 /** Alterar o papel de um membro (só super_admin; via service_role). */
 export async function alterarRole(pessoaId, novoRole) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (!['admin', 'super_admin'].includes(novoRole)) return { ok: false, erro: 'Papel inválido.' }
   if (pessoaId === pessoa.id) {
@@ -117,7 +121,9 @@ export async function alterarRole(pessoaId, novoRole) {
  * rejeitados: sem o código, tanto as chamadas como o wa.me falham.
  */
 export async function atualizarContactos({ telefone, whatsapp }) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const tel = normalizarNumero(telefone)
   const zap = normalizarNumero(whatsapp)
@@ -160,7 +166,9 @@ export async function atualizarContactos({ telefone, whatsapp }) {
  * Reativar = criar conta com o mesmo email (mesma identidade).
  */
 export async function removerMembro(pessoaId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
   if (pessoaId === pessoa.id) {
     return { ok: false, erro: 'Não podes remover a tua própria conta.' }

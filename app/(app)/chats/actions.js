@@ -94,7 +94,9 @@ async function avisarCanal(supabase, canal, autorId, nomeAutor, texto) {
 
 /** Enviar mensagem num canal (atividade:<id>, reuniao:<id> ou dm:<a>:<b>). */
 export async function enviarMensagem(canal, conteudo) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   const texto = textoValido(conteudo)
   if (!texto) return { ok: false, erro: 'A mensagem está vazia.' }
 
@@ -123,7 +125,9 @@ export async function enviarMensagem(canal, conteudo) {
 
 /** Editar a própria mensagem (enquanto não apagada). */
 export async function editarMensagem(mensagemId, conteudo) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   const texto = textoValido(conteudo)
   if (!texto) return { ok: false, erro: 'A mensagem está vazia.' }
 
@@ -140,7 +144,9 @@ export async function editarMensagem(mensagemId, conteudo) {
 
 /** Apagar a própria mensagem (soft delete — a thread fica coerente). */
 export async function apagarMensagem(mensagemId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -159,7 +165,9 @@ export async function apagarMensagem(mensagemId) {
  * as linhas de mensagens nascem à primeira mensagem.
  */
 export async function abrirConversaCom(idPessoa) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!idPessoa || idPessoa === pessoa.id) {
     return { ok: false, erro: 'Conversa inválida.' }
   }

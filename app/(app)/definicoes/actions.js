@@ -29,8 +29,9 @@ function erroPasskey(error) {
  * Renomeia um dispositivo/passkey da própria conta.
  */
 export async function renomearPasskey(passkeyId, nome) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!passkeyId) return { ok: false, erro: 'Dispositivo não identificado.' }
 
   const nomeLimpo = (nome ?? '').trim().slice(0, 120)
@@ -56,8 +57,9 @@ export async function renomearPasskey(passkeyId, nome) {
  * Depois disto, ele deixa de conseguir iniciar sessão por biometria.
  */
 export async function eliminarPasskey(passkeyId) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!passkeyId) return { ok: false, erro: 'Dispositivo não identificado.' }
 
   const supabase = await createClient()
@@ -77,7 +79,9 @@ export async function eliminarPasskey(passkeyId) {
  * (registerPasskey), o evento é registado aqui via service_role.
  */
 export async function registarEventoPasskey(passkeyId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!pessoa || !passkeyId) return { ok: false }
   await registarEvento('passkey.registada', { passkey_id: passkeyId }, pessoa.id)
   return { ok: true }
@@ -93,8 +97,9 @@ export async function registarEventoPasskey(passkeyId) {
 // =============================================================
 
 export async function iniciarAtivacao2FA() {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
 
@@ -128,8 +133,9 @@ export async function iniciarAtivacao2FA() {
  * Prova que a app realmente gere o segredo antes de ativar.
  */
 export async function confirmarAtivacao2FA(factorId, codigo) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!/^[0-9]{6}$/.test((codigo ?? '').trim())) {
     return { ok: false, erro: 'Código inválido — são 6 dígitos.' }
   }
@@ -154,8 +160,9 @@ export async function confirmarAtivacao2FA(factorId, codigo) {
  * botão que qualquer pessoa com a sessão aberta carregue.
  */
 export async function desativar2FA(factorId, codigo) {
-  const { pessoa } = await getUtilizadorAtual()
-  if (!pessoa) return { ok: false, erro: 'Sessão inválida.' }
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!/^[0-9]{6}$/.test((codigo ?? '').trim())) {
     return { ok: false, erro: 'Código inválido — são 6 dígitos.' }
   }
@@ -187,7 +194,9 @@ export async function desativar2FA(factorId, codigo) {
  * A nova palavra-passe invalida as sessões noutros dispositivos.
  */
 export async function alterarPalavraPasse({ atual, nova }) {
-  const { user } = await getUtilizadorAtual()
+  const sessao = await getUtilizadorAtual()
+  if (!sessao) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { user } = sessao
 
   if (!atual || !nova) {
     return { ok: false, erro: 'Preenche a palavra-passe atual e a nova.' }
@@ -234,7 +243,9 @@ export async function alterarPalavraPasse({ atual, nova }) {
  * O email fica fixo — a alteração de email exigiria fluxo de verificação.
  */
 export async function atualizarNome(nome) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const nomeLimpo = (nome ?? '').trim()
   if (nomeLimpo.length < 2) {

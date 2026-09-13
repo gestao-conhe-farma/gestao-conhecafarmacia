@@ -9,7 +9,9 @@ import { notificar, notificarCoordenacao, semAutor } from '@/lib/notificacoes'
  * Nasce sempre pendente_aprovacao (RLS impõe criado_por = auth.uid()).
  */
 export async function criarSubtarefa(payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const { atividadeId, titulo, descricao, prazo, responsaveis } = payload
   if (!titulo?.trim()) return { ok: false, erro: 'O título é obrigatório.' }
@@ -70,7 +72,9 @@ export async function rejeitarSubtarefa(id, motivo) {
   const texto = (motivo ?? '').trim()
   if (!texto) return { ok: false, erro: 'Explica o motivo da recusa — é obrigatório.' }
 
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -101,7 +105,9 @@ export async function rejeitarSubtarefa(id, motivo) {
  * não concluída. Campos: título, descrição, prazo e responsáveis.
  */
 export async function editarSubtarefa(id, payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { data: sub } = await supabase
@@ -167,7 +173,9 @@ export async function editarSubtarefa(id, payload) {
  * (mesmo aprovada/concluída — registo some com as ligações, em cascata).
  */
 export async function eliminarSubtarefa(id) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const supabase = await createClient()
   const { data: sub } = await supabase
@@ -201,7 +209,9 @@ export async function eliminarSubtarefa(id) {
  * e a super_admin.
  */
 export async function mudarEstadoSubtarefa(id, estado, motivo = null) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (!['concluida', 'cancelada', 'erro'].includes(estado)) {
     return { ok: false, erro: 'Estado inválido.' }
   }
@@ -276,7 +286,9 @@ export async function concluirSubtarefa(id, motivo = null) {
  * obrigatório — privado: só o autor e a coordenação (super_admin) leem.
  */
 export async function desconfirmarAtribuicaoSubtarefa(id, motivo = null) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   const texto = (motivo ?? '').trim()
   if (!texto) {
     return { ok: false, erro: 'O justificativo é obrigatório.' }
@@ -325,7 +337,9 @@ export async function desconfirmarAtribuicaoSubtarefa(id, motivo = null) {
  * O motivo mantém-se guardado (histórico confidencial).
  */
 export async function retratarRecusaSubtarefa(id) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()

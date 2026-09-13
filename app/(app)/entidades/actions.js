@@ -25,7 +25,9 @@ function limparCampos(payload) {
 
 /** Criar entidade. */
 export async function criarEntidade(payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
 
   const campos = limparCampos(payload)
   if (!campos.nome) return { ok: false, erro: 'O nome é obrigatório.' }
@@ -55,7 +57,8 @@ export async function criarEntidade(payload) {
 
 /** Editar entidade (qualquer membro). */
 export async function editarEntidade(id, payload) {
-  await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
 
   const campos = limparCampos(payload)
   if (!campos.nome) return { ok: false, erro: 'O nome é obrigatório.' }
@@ -73,7 +76,8 @@ export async function editarEntidade(id, payload) {
 
 /** Marcar entidade como inativa/ativa (qualquer membro). */
 export async function alternarAtivoEntidade(id, ativo) {
-  await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -88,7 +92,9 @@ export async function alternarAtivoEntidade(id, ativo) {
 
 /** Eliminar definitivamente (super_admin). */
 export async function eliminarEntidade(id) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') {
     return { ok: false, erro: 'Só a coordenação pode eliminar — usa "Marcar inativa" para esconder da lista.' }
   }
