@@ -10,7 +10,9 @@ import { registarEvento } from '@/lib/auditoria'
  * (o ficheiro é enviado direto do browser para o Storage).
  */
 export async function registarDocumento(payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') {
     return { ok: false, erro: 'Apenas a coordenação pode adicionar documentos.' }
   }
@@ -79,7 +81,9 @@ export async function registarDocumento(payload) {
  * categoria e a marca de restrito.
  */
 export async function editarDocumento(documentoId, payload) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') {
     return { ok: false, erro: 'Sem permissão.' }
   }
@@ -122,7 +126,9 @@ export async function editarDocumento(documentoId, payload) {
  * Elimina o documento (BD + ficheiro no Storage). Coordenação apenas.
  */
 export async function eliminarDocumento(documentoId) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()
@@ -152,7 +158,9 @@ export async function eliminarDocumento(documentoId) {
 
 /** Criar categoria (coordenação). */
 export async function criarCategoria(nome) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const nomeLimpo = (nome ?? '').trim()
@@ -171,7 +179,9 @@ export async function criarCategoria(nome) {
 
 /** Renomear categoria (coordenação). */
 export async function renomearCategoria(id, nome) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const nomeLimpo = (nome ?? '').trim()
@@ -193,7 +203,9 @@ export async function renomearCategoria(id, nome) {
  * (evita órfãos); o utilizador deve mover/eliminar os docs primeiro.
  */
 export async function eliminarCategoria(id) {
-  const { pessoa } = await getUtilizadorAtual()
+  const atual = await getUtilizadorAtual()
+  if (!atual) return { ok: false, erro: 'Sessão inválida. Recarrega a página e tenta novamente.' }
+  const { pessoa } = atual
   if (pessoa.role !== 'super_admin') return { ok: false, erro: 'Sem permissão.' }
 
   const supabase = await createClient()

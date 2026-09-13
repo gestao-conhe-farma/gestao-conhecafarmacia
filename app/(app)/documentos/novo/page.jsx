@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { exigirUtilizador } from '@/lib/supabase/server'
-import { listarCategoriasDocs } from '@/lib/dados'
+import { listarCategoriasDocs, listarUltimasCartas } from '@/lib/dados'
 import FormNovoDocumento from './FormNovoDocumento'
 
 export const metadata = { title: 'Adicionar documento' }
@@ -10,6 +10,7 @@ export default async function PaginaNovoDocumento() {
   if (pessoa.role !== 'super_admin') redirect('/documentos')
 
   const categorias = await listarCategoriasDocs()
+  const ultimasCartas = await listarUltimasCartas()
 
   return (
     <div className="container-app max-w-2xl">
@@ -22,7 +23,7 @@ export default async function PaginaNovoDocumento() {
       </p>
 
       <div className="card p-6 md:p-8">
-        <FormNovoDocumento categorias={categorias} />
+        <FormNovoDocumento categorias={categorias} ultimasCartas={ultimasCartas} />
       </div>
     </div>
   )

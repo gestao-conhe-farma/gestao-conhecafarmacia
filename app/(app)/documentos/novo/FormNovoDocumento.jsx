@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileUp, Loader2, Lock, UploadCloud } from 'lucide-react'
+import { ArrowLeft, FileUp, Loader2, Lock, UploadCloud, Wand2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 import {
   BUCKET,
@@ -15,7 +15,7 @@ import {
 } from '@/lib/documentos'
 import { registarDocumento } from '../actions'
 
-export default function FormNovoDocumento({ categorias }) {
+export default function FormNovoDocumento({ categorias, ultimasCartas = [] }) {
   const router = useRouter()
   const inputFicheiro = useRef(null)
 
@@ -70,6 +70,20 @@ export default function FormNovoDocumento({ categorias }) {
     const catNome = categorias.find((c) => c.id === catIdEfetivo)?.nome
     const sugestao = sugerirFinalidade(codigoEfetivo, catNome)
     if (sugestao && !descricao.trim()) setDescricao(sugestao)
+  }
+
+  // Próximo código disponível para o prefixo atual (ex.: CF-PAR-002-2026).
+  // Só sugere se o campo ainda não tiver um código completo — assim não
+  // atrapalha quem já sabe o que vai usar.
+  const prefixoAtual = codigo.toUpperCase().match(/\bCF-[A-Z]{3}\b/)?.[0] ?? null
+  const infoTipo = prefixoAtual ? ultimasCartas.find((c) => c.prefixo === prefixoAtual) : null
+  const codigoIncompleto = !/^CF-[A-Z]{3}-\d+-\d{4}$/.test(codigo.trim().toUpperCase())
+  const sugestaoCodigo = infoTipo && codigoIncompleto ? infoTipo : null
+
+  function usarSugestaoCodigo() {
+    if (!sugestaoCodigo) return
+    setCodigo(sugestaoCodigo.proximo_codigo)
+    sincronizarSugestao({ novoCodigo: sugestaoCodigo.proximo_codigo })
   }
 
   async function submeter(e) {
@@ -210,19 +224,36 @@ export default function FormNovoDocumento({ categorias }) {
         </div>
 
         <div className="form-group">
-          <label className="form-label" htmlFor="doc-codigo">Código (opcional)</label>
+          <label className="form-label" htmlFor="doc-codigo">Código</label>
           <input
             id="doc-codigo"
             className="form-input"
-          placeholder="Ex.: CF-PAT-001-2026"
-          value={codigo}
-          onChange={(e) => {
-            setCodigo(e.target.value)
-            sincronizarSugestao({ novoCodigo: e.target.value })
-          }}
-        />
+            placeholder="Ex.: CF-PAT-001-2026"
+            value={codigo}
+            onChange={(e) => {
+              setCodigo(e.target.value)
+              sincronizarSugestao({ novoCodigo: e.target.value })
+            }}
+          />
+          {sugestaoCodigo && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
+              <span className="text-brand-deep/55">
+                Última: <span className="font-mono font-semibold text-brand-deep/75">{sugestaoCodigo.ultimo_codigo}</span>
+              </span>
+              <button
+                type="button"
+                onClick={usarSugestaoCodigo}
+                className="inline-flex items-center gap-1.5 font-semibold text-brand-accent hover:text-brand-primary transition-colors"
+              >
+                <Wand2 size={13} />
+                Usar <span className="font-mono">{sugestaoCodigo.proximo_codigo}</span>
+              </button>
+            </div>
+          )}
         </div>
-      </div>      <div className="form-group">
+      </div>
+
+      <div className="form-group">
         <label className="form-label" htmlFor="doc-desc">
           Descrição — para que serve
         </label>

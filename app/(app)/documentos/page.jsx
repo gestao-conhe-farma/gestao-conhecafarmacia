@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { FolderOpen, Plus } from 'lucide-react'
 import { exigirUtilizador } from '@/lib/supabase/server'
-import { listarCategoriasDocs, listarDocumentos } from '@/lib/dados'
+import { listarCategoriasDocs, listarDocumentos, listarUltimasCartas } from '@/lib/dados'
 import DocumentosFiltros from './DocumentosFiltros'
 import ListaDocumentos from './ListaDocumentos'
 import GestorCategorias from './GestorCategorias'
+import PainelUltimasCartas from './PainelUltimasCartas'
 
 export const metadata = { title: 'Documentos' }
 
@@ -15,9 +16,10 @@ export default async function PaginaDocumentos({ searchParams }) {
   const busca = params?.q || ''
   const ehSuper = pessoa.role === 'super_admin'
 
-  const [categorias, documentos] = await Promise.all([
+  const [categorias, documentos, ultimasCartas] = await Promise.all([
     listarCategoriasDocs(),
     listarDocumentos({ categoriaId: categoriaId || null, busca: busca || null }),
+    listarUltimasCartas(),
   ])
 
   const categoriaAtual = categorias.find((c) => c.id === categoriaId)
@@ -47,6 +49,8 @@ export default async function PaginaDocumentos({ searchParams }) {
       </div>
 
       <DocumentosFiltros categorias={categorias} categoriaAtual={categoriaId} busca={busca} />
+
+      {!categoriaAtual && <PainelUltimasCartas cartas={ultimasCartas} />}
 
       {ehSuper && <GestorCategorias categorias={categorias} />}
 
